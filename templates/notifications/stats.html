@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'notifications:notification_list' %}"><i class="bi bi-arrow-left me-1"></i>Notifications</a>
+  <a class="btn btn-sm btn-primary" href="{% url 'notifications:notification_add' %}"><i class="bi bi-plus-lg me-1"></i>New notice</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Total notices</div><div class="sms-stat-value">{{ total }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Active</div><div class="sms-stat-value">{{ active }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Read receipts</div><div class="sms-stat-value">{{ reads }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">Priorities used</div><div class="sms-stat-value">{{ priority_rows|length }}</div></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Notices by priority</h2></div>
+      <div class="table-responsive">
+        <table class="table align-middle sms-table mb-0">
+          <thead><tr><th>Priority</th><th class="text-center">Notices</th><th class="text-end">Share</th></tr></thead>
+          <tbody>
+            {% for row in priority_rows %}
+              <tr>
+                <td><span class="badge bg-{% if row.priority == 'URGENT' %}danger{% elif row.priority == 'HIGH' %}warning{% elif row.priority == 'NORMAL' %}info{% else %}secondary{% endif %}">{{ row.label }}</span></td>
+                <td class="text-center">{{ row.total }}</td>
+                <td class="text-end">{% width_percent row.total total as share %}{{ share }}%</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="sms-empty">No notification has been published yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Priority distribution</h2></div>
+      <div class="card-body"><div style="height:260px"><canvas id="priorityChart"></canvas></div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    var labels = [{% for row in priority_rows %}"{{ row.label }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+    var values = [{% for row in priority_rows %}{{ row.total }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    if (!labels.length || typeof Chart === "undefined") { return; }
+    smsChart("priorityChart", {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [{ label: "Notices", data: values, backgroundColor: ["#6f42c1", "#0dcaf0", "#ffc107", "#dc3545"] }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { display: false } }
+      }
+    });
+  })();
+</script>
+{% endblock %}

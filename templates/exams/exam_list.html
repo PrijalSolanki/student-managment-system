@@ -1,0 +1,20 @@
+{% extends "base_list.html" %}
+{% load ui %}
+
+{% block list_summary %}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Total exams</div><div class="sms-stat-value">{{ total_exams }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Published</div><div class="sms-stat-value">{{ published_exams }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Running now</div><div class="sms-stat-value">{{ running_exams }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">Results pending</div><div class="sms-stat-value">{{ pending_results }}</div></div></div>
+  </div>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:mark_entry_list' %}"><i class="bi bi-pencil-square me-1"></i>Mark entries</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:result_list' %}"><i class="bi bi-award me-1"></i>Results</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:exam_report' %}"><i class="bi bi-graph-up me-1"></i>Exam report</a>
+  {% if user.can('manage_exams') %}
+    <a class="btn btn-sm btn-primary" href="{% url 'exams:exam_add' %}"><i class="bi bi-plus-lg me-1"></i>Add exam</a>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=csv %}"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=xlsx %}"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=pdf %}" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'reports:defaulters_report' %}"><i class="bi bi-exclamation-triangle me-1"></i>Defaulters</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'reports:report_index' %}"><i class="bi bi-arrow-left me-1"></i>Reports</a>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="card sms-card mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-6 col-lg-3">
+        <label class="form-label small" for="date_from">From</label>
+        <input class="form-control" type="date" name="date_from" id="date_from" value="{{ start|date:'Y-m-d' }}">
+      </div>
+      <div class="col-6 col-lg-3">
+        <label class="form-label small" for="date_to">To</label>
+        <input class="form-control" type="date" name="date_to" id="date_to" value="{{ end|date:'Y-m-d' }}">
+      </div>
+      <div class="col-12 col-lg-4 d-flex gap-2">
+        <button class="btn btn-primary" type="submit"><i class="bi bi-funnel me-1"></i>Apply</button>
+        <a class="btn btn-outline-secondary" href="{% url 'reports:attendance_report' %}">Reset</a>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Attendance rate</div><div class="sms-stat-value">{{ summary.percentage|pct }}</div><small class="text-muted">{{ summary.total }} record(s)</small></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Present</div><div class="sms-stat-value">{{ summary.present }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-danger"><div class="sms-stat-label">Absent</div><div class="sms-stat-value">{{ summary.absent }}</div><small class="text-muted">{{ summary.absent_percentage|pct }}</small></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">Leave</div><div class="sms-stat-value">{{ summary.leave }}</div><small class="text-muted">{{ summary.days }} day(s)</small></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-7">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Attendance by department</h2></div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle sms-table mb-0">
+          <thead><tr><th>Department</th><th class="text-center">Total</th><th class="text-center">Present</th>
+            <th class="text-center">Absent</th><th class="text-center">Leave</th><th style="width:12rem">Rate</th></tr></thead>
+          <tbody>
+            {% for row in departments %}
+              <tr>
+                <td>{{ row.department }}</td>
+                <td class="text-center">{{ row.total }}</td>
+                <td class="text-center">{{ row.present }}</td>
+                <td class="text-center">{{ row.absent }}</td>
+                <td class="text-center">{{ row.leave }}</td>
+                <td>
+                  <div class="sms-progress-cell">
+                    <div class="progress" role="progressbar" style="height:.5rem">
+                      <div class="progress-bar {% progress_class row.percentage %}" style="width:{% width_percent row.percentage %}%"></div>
+                    </div>
+                    <small>{{ row.percentage|pct }}</small>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" class="sms-empty">No attendance has been recorded yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Daily trend</h2></div>
+      <div class="card-body"><div style="height:280px"><canvas id="attendanceTrend"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="card sms-card">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h2 class="h6 mb-0">Low attendance defaulters</h2>
+    <a href="{% url 'reports:defaulters_report' %}">Full list <i class="bi bi-arrow-right"></i></a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle sms-table mb-0">
+      <thead><tr><th>Student</th><th>Course</th><th class="text-center">Classes</th><th class="text-center">Absent</th><th class="text-end">Attendance</th></tr></thead>
+      <tbody>
+        {% for row in low_attendance %}
+          <tr>
+            <td>{{ row.name }} <small class="text-muted">{{ row.student_id }}</small></td>
+            <td>{{ row.course }}</td>
+            <td class="text-center">{{ row.total }}</td>
+            <td class="text-center">{{ row.absent }}</td>
+            <td class="text-end">
+              {% progress_class row.percentage as tone %}
+              <span class="badge bg-{{ tone }}">{{ row.percentage|pct }}</span>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="sms-empty">Every student is above the attendance threshold.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    var labels = [{% for label in summary.labels %}"{{ label }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+    if (!labels.length || typeof Chart === "undefined") { return; }
+    smsChart("attendanceTrend", {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [
+          { label: "Present", data: [{% for value in summary.present_values %}{{ value }}{% if not forloop.last %}, {% endif %}{% endfor %}], borderColor: "#198754", tension: 0.3 },
+          { label: "Absent", data: [{% for value in summary.absent_values %}{{ value }}{% if not forloop.last %}, {% endif %}{% endfor %}], borderColor: "#dc3545", tension: 0.3 }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { position: "bottom" } } }
+    });
+  })();
+</script>
+{% endblock %}

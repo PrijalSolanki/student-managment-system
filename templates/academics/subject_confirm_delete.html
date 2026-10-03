@@ -1,0 +1,6 @@
+{% extends "base_confirm_delete.html" %}
+{% load ui %}
+
+{% block confirm_text %}
+  Delete the subject <strong>{{ object }}</strong>? Attendance and marks recorded against it will block the deletion.
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=csv %}"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=xlsx %}"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=pdf %}" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:exam_list' %}"><i class="bi bi-arrow-left me-1"></i>Exams</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-lg-8">
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Exam wise pass rate &amp; average</h2></div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle sms-table mb-0">
+          <thead>
+            <tr><th>Exam</th><th>Course</th><th>Semester</th><th class="text-center">Students</th>
+              <th class="text-center">Passed</th><th class="text-center">Failed</th><th class="text-end">Pass %</th><th class="text-end">Average</th></tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td><a href="{% url 'exams:exam_detail' row.exam.pk %}">{{ row.exam.code }}</a></td>
+                <td>{{ row.exam.course.name }}</td>
+                <td class="text-center">{{ row.exam.semester.number }}</td>
+                <td class="text-center">{{ row.total }}</td>
+                <td class="text-center">{{ row.passed }}</td>
+                <td class="text-center">{{ row.failed }}</td>
+                <td class="text-end"><span class="badge bg-{{ row.pass_rate|status_class }}">{{ row.pass_rate }}%</span></td>
+                <td class="text-end">{{ row.average }}%</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="8" class="sms-empty">No exam data available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Passed vs failed</h2></div>
+      <div class="card-body"><div style="height:260px"><canvas id="examPassChart"></canvas></div></div>
+    </div>
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Average percentage</h2></div>
+      <div class="card-body"><div style="height:240px"><canvas id="examAvgChart"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+{% include "partials/_pagination.html" %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    var labels = [{% for label in chart_data.labels %}"{{ label }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+    var passed = [{% for value in chart_data.passed %}{{ value }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    var failed = [{% for value in chart_data.failed %}{{ value }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    var average = [{% for value in chart_data.average %}{{ value }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    if (!labels.length || typeof Chart === "undefined") { return; }
+    smsChart("examPassChart", {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [
+          { label: "Passed", data: passed, backgroundColor: "#198754" },
+          { label: "Failed", data: failed, backgroundColor: "#dc3545" }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { position: "bottom" } } }
+    });
+    smsChart("examAvgChart", {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [{ label: "Average %", data: average, borderColor: "#1f3c88", tension: 0.3, fill: false }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
+    });
+  })();
+</script>
+{% endblock %}

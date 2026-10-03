@@ -1,0 +1,6 @@
+{% extends "base_confirm_delete.html" %}
+{% load ui %}
+
+{% block confirm_text %}
+  Delete the department <strong>{{ object }}</strong>? Linked courses, subjects, teachers and students will block this action.
+{% endblock %}

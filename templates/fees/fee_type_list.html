@@ -1,0 +1,15 @@
+{% extends "base_list.html" %}
+{% load ui %}
+
+{% block list_summary %}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Total fee types</div><div class="sms-stat-value">{{ total_types }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Active</div><div class="sms-stat-value">{{ active_types }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">In use</div><div class="sms-stat-value">{{ fee_types|length }}</div></div></div>
+  </div>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:fee_structure_list' %}"><i class="bi bi-sliders me-1"></i>Structures</a>
+  <a class="btn btn-sm btn-primary" href="{% url 'fees:fee_type_add' %}"><i class="bi bi-plus-lg me-1"></i>Add fee type</a>
+{% endblock %}

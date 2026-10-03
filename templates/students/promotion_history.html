@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=csv %}"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=xlsx %}"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=pdf %}"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="card sms-card mb-3">
+  <div class="card-body row g-2 align-items-end">
+    <div class="col-12 col-md-5">
+      <label class="form-label small" for="promoSearch">Search</label>
+      <input type="search" class="form-control" id="promoSearch" name="q" value="{{ search_term }}"
+             placeholder="Student, ID or reason">
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="promoType">Type</label>
+      <select class="form-select" id="promoType" name="promotion_type">
+        <option value="">All types</option>
+        {% for value, label in promotion_types %}
+          <option value="{{ value }}" {% if selected_promotion_type == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-4 d-flex gap-2">
+      <button class="btn btn-primary flex-fill" type="submit"><i class="bi bi-search me-1"></i>Filter</button>
+      <a class="btn btn-outline-secondary" href="{% url 'students:promotion_history' %}">Reset</a>
+    </div>
+  </div>
+</form>
+
+<div class="card sms-card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle sms-table mb-0">
+      <thead>
+        <tr>
+          <th>Date</th><th>Student</th><th>Type</th><th>Change</th><th>Academic year</th>
+          <th>Reason</th><th>By</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in promotions %}
+          <tr>
+            <td class="text-nowrap">{{ item.created_at|date:"d M Y" }}</td>
+            <td><a href="{% url 'students:student_detail' item.student.pk %}"><strong>{{ item.student.student_id }}</strong> {{ item.student.full_name }}</a></td>
+            <td><span class="badge bg-light text-dark border">{{ item.get_promotion_type_display }}</span></td>
+            <td class="small">{{ item.summary }}</td>
+            <td class="small text-nowrap">{{ item.academic_year_from|default:"—" }} &rarr; {{ item.academic_year_to|default:"—" }}</td>
+            <td class="small">{{ item.reason|default:"—" }}</td>
+            <td class="small">{{ item.promoted_by.username|default:"—" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="sms-empty">No promotions recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% include "partials/_pagination.html" %}
+{% endblock %}

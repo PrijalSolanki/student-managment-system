@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=csv %}"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=xlsx %}"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=pdf %}" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'teachers:teacher_list' %}"><i class="bi bi-person-badge me-1"></i>Teachers</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'reports:report_index' %}"><i class="bi bi-arrow-left me-1"></i>Reports</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Teachers</div><div class="sms-stat-value">{{ summary.total }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Active</div><div class="sms-stat-value">{{ summary.active }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">On leave</div><div class="sms-stat-value">{{ summary.on_leave }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Monthly payroll</div><div class="sms-stat-value">{{ summary.payroll|money:CURRENCY_SYMBOL }}</div><small class="text-muted">{{ summary.average_workload }} subjects/teacher</small></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-6">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Academic setup</h2></div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-4 text-center">
+            <div class="sms-stat"><div class="sms-stat-label">Departments</div><div class="sms-stat-value">{{ academics.departments }}</div></div>
+          </div>
+          <div class="col-4 text-center">
+            <div class="sms-stat"><div class="sms-stat-label">Courses</div><div class="sms-stat-value">{{ academics.courses }}</div></div>
+          </div>
+          <div class="col-4 text-center">
+            <div class="sms-stat"><div class="sms-stat-label">Subjects</div><div class="sms-stat-value">{{ academics.subjects }}</div></div>
+          </div>
+          <div class="col-4 text-center">
+            <div class="sms-stat"><div class="sms-stat-label">Batches</div><div class="sms-stat-value">{{ academics.batches }}</div></div>
+          </div>
+          <div class="col-4 text-center">
+            <div class="sms-stat"><div class="sms-stat-label">Teachers</div><div class="sms-stat-value">{{ academics.teachers }}</div></div>
+          </div>
+          <div class="col-4 text-center">
+            <div class="sms-stat"><div class="sms-stat-label">Assignments</div><div class="sms-stat-value">{{ academics.assignments }}</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Teacher workload</h2></div>
+      <div class="card-body"><div style="height:250px"><canvas id="workloadChart"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="card sms-card mb-3">
+  <div class="card-header bg-white"><h2 class="h6 mb-0">Subject load</h2></div>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle sms-table mb-0">
+      <thead><tr><th>Subject</th><th>Course</th><th class="text-center">Teachers</th><th class="text-center">Students</th></tr></thead>
+      <tbody>
+        {% for row in academics.subject_load %}
+          <tr>
+            <td>{{ row.code }} &mdash; {{ row.name }}</td>
+            <td>{{ row.course.name|default:"—" }}</td>
+            <td class="text-center">{{ row.teachers }}</td>
+            <td class="text-center">{{ row.students }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="sms-empty">No subject has been assigned yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card sms-card">
+  <div class="card-header bg-white"><h2 class="h6 mb-0">Teachers by workload</h2></div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle sms-table mb-0">
+      <thead><tr><th>Employee ID</th><th>Teacher</th><th class="text-center">Subjects assigned</th></tr></thead>
+      <tbody>
+        {% for row in summary.workload %}
+          <tr><td>{{ row.teacher_id }}</td><td>{{ row.name }}</td><td class="text-center">{{ row.subjects }}</td></tr>
+        {% empty %}
+          <tr><td colspan="3" class="sms-empty">No teacher carries a subject assignment.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    var labels = [{% for row in summary.workload %}"{{ row.name }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+    var values = [{% for row in summary.workload %}{{ row.subjects }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    if (!labels.length || typeof Chart === "undefined") { return; }
+    smsChart("workloadChart", {
+      type: "bar",
+      data: { labels: labels, datasets: [{ label: "Subjects", data: values, backgroundColor: "#1f3c88" }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: "y",
+        scales: { x: { beginAtZero: true } },
+        plugins: { legend: { display: false } }
+      }
+    });
+  })();
+</script>
+{% endblock %}

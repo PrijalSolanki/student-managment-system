@@ -1,0 +1,54 @@
+{% extends "base_list.html" %}
+{% load ui %}
+
+{% block list_summary %}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Exams</div><div class="sms-stat-value">{{ results|length }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Passed</div><div class="sms-stat-value">{{ passed_total }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-danger"><div class="sms-stat-label">Failed</div><div class="sms-stat-value">{{ failed_total }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Average</div><div class="sms-stat-value">{{ average_percentage }}%</div></div></div>
+  </div>
+
+  <div class="card sms-card mb-3">
+    <div class="card-header bg-white">
+      <h2 class="h6 mb-0">{{ student.full_name }} ({{ student.student_id }}) — performance trend</h2>
+    </div>
+    <div class="card-body">
+      <div style="height:240px"><canvas id="studentTrend"></canvas></div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'students:student_detail' student.pk %}"><i class="bi bi-person me-1"></i>Profile</a>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    var labels = [{% for item in chart_data.labels %}"{{ item }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+    var values = [{% for item in chart_data.values %}{{ item }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    if (!labels.length || typeof Chart === "undefined") { return; }
+    smsChart("studentTrend", {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "Percentage",
+          data: values,
+          borderColor: "#1f3c88",
+          backgroundColor: "rgba(31,60,136,.12)",
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, max: 100 } },
+        plugins: { legend: { display: false } }
+      }
+    });
+  })();
+</script>
+{% endblock %}

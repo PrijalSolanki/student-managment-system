@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=csv %}"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=xlsx %}"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=pdf %}" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:result_list' %}"><i class="bi bi-award me-1"></i>Results</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'reports:report_index' %}"><i class="bi bi-arrow-left me-1"></i>Reports</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Results recorded</div><div class="sms-stat-value">{{ summary.total }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Pass rate</div><div class="sms-stat-value">{{ summary.pass_percentage|pct }}</div><small class="text-muted">{{ summary.passed }} passed</small></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-danger"><div class="sms-stat-label">Failed</div><div class="sms-stat-value">{{ summary.failed }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Average score</div><div class="sms-stat-value">{{ summary.average_percentage|pct }}</div></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-5">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Grade distribution</h2></div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle sms-table mb-0">
+          <thead><tr><th>Grade</th><th class="text-center">Results</th><th class="text-end">Share</th></tr></thead>
+          <tbody>
+            {% for row in summary.grades %}
+              <tr>
+                <td><span class="badge bg-{{ row.grade|status_class }}">{{ row.grade }}</span></td>
+                <td class="text-center">{{ row.total }}</td>
+                <td class="text-end">{% width_percent row.total summary.total as share %}{{ share }}%</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="sms-empty">No result has been published yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Exam performance</h2></div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle sms-table mb-0">
+          <thead><tr><th>Exam</th><th class="text-center">Results</th><th class="text-center">Passed</th><th class="text-end">Pass %</th></tr></thead>
+          <tbody>
+            {% for row in summary.exams %}
+              <tr>
+                <td>{{ row.name }} <small class="text-muted">{{ row.code }}</small></td>
+                <td class="text-center">{{ row.results_total }}</td>
+                <td class="text-center">{{ row.passed }}</td>
+                <td class="text-end">
+                  {% width_percent row.passed row.results_total as rate %}{{ rate }}%
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="sms-empty">No exam has been conducted yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card sms-card">
+  <div class="card-header bg-white"><h2 class="h6 mb-0">Toppers</h2></div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle sms-table mb-0">
+      <thead>
+        <tr><th style="width:3rem">#</th><th>Student</th><th>Course</th><th>Exam</th>
+          <th class="text-center">Marks</th><th class="text-center">%</th><th class="text-center">Grade</th></tr>
+      </thead>
+      <tbody>
+        {% for entry in toppers %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td><a href="{% url 'students:student_detail' entry.student.pk %}">{{ entry.student.full_name }}</a>
+              <small class="text-muted d-block">{{ entry.student.student_id }}</small></td>
+            <td>{{ entry.student.course.name|default:"—" }}</td>
+            <td>{{ entry.exam.code }}</td>
+            <td class="text-center">{{ entry.result.total_marks }}/{{ entry.result.max_marks }}</td>
+            <td class="text-center"><span class="badge bg-{{ entry.grade|status_class }}">{{ entry.percentage|pct }}</span></td>
+            <td class="text-center">{{ entry.grade }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="sms-empty">No passing result to display.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

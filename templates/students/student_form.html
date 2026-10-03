@@ -1,0 +1,19 @@
+{% extends "base_form.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'students:student_list' %}"><i class="bi bi-arrow-left me-1"></i>Back</a>
+{% endblock %}
+
+{% block form_below %}
+  <div class="card sms-card mt-3">
+    <div class="card-header bg-white"><h2 class="h6 mb-0">Good to know</h2></div>
+    <div class="card-body small text-muted">
+      <ul class="mb-0">
+        <li>Selecting a course auto-fills the owning department.</li>
+        <li>The student ID is generated automatically and stays unique.</li>
+        <li>Promotion (semester change) is recorded separately from profile edits.</li>
+      </ul>
+    </div>
+  </div>
+{% endblock %}

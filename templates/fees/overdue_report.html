@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=csv %}"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=xlsx %}"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=pdf %}" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:fee_report' %}"><i class="bi bi-graph-up me-1"></i>Collection report</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:fee_record_list' %}"><i class="bi bi-receipt me-1"></i>Invoices</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Total billed</div><div class="sms-stat-value">{{ summary.billed|money:CURRENCY_SYMBOL }}</div><small class="text-muted">{{ summary.records }} invoice(s)</small></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Total collected</div><div class="sms-stat-value">{{ summary.collected|money:CURRENCY_SYMBOL }}</div><small class="text-muted">{{ summary.collection_percentage|pct }} of billed</small></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">Outstanding</div><div class="sms-stat-value">{{ summary.pending|money:CURRENCY_SYMBOL }}</div><small class="text-muted">{{ summary.pending_records }} pending</small></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-danger"><div class="sms-stat-label">Overdue amount</div><div class="sms-stat-value">{{ summary.overdue_amount|money:CURRENCY_SYMBOL }}</div><small class="text-muted">{{ summary.overdue_records }} invoice(s)</small></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-5">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Ageing buckets</h2></div>
+      <div class="table-responsive">
+        <table class="table align-middle sms-table mb-0">
+          <thead><tr><th>Bucket</th><th class="text-end">Amount</th><th class="text-end">Share</th></tr></thead>
+          <tbody>
+            {% for label, amount in buckets.items %}
+              <tr>
+                <td>{{ label }} days</td>
+                <td class="text-end">{{ amount|money:CURRENCY_SYMBOL }}</td>
+                <td class="text-end">
+                  {% width_percent amount total_amount as bucket_pct %}{{ bucket_pct }}%
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr><th>Total</th><th class="text-end">{{ total_amount|money:CURRENCY_SYMBOL }}</th><th>100%</th></tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Overdue by ageing</h2></div>
+      <div class="card-body"><div style="height:260px"><canvas id="overdueChart"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="card sms-card">
+  <div class="card-header bg-white">
+    <h2 class="h6 mb-0">Overdue invoices ({{ total_rows }})</h2>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle sms-table mb-0">
+      <thead>
+        <tr><th>Invoice</th><th>Student</th><th>Code</th><th>Fee type</th><th>Due date</th>
+          <th class="text-center">Days</th><th class="text-end">Balance</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td><a href="{% url 'fees:fee_record_detail' row.record.pk %}">{{ row.record.invoice_no }}</a></td>
+            <td><a href="{% url 'students:student_detail' row.student.pk %}">{{ row.student.full_name }}</a></td>
+            <td>{{ row.student.student_id }}</td>
+            <td>{{ row.record.fee_type.name }}</td>
+            <td>{{ row.record.due_date|date:"d M Y" }}</td>
+            <td class="text-center">
+              <span class="badge {% if row.days > 90 %}bg-danger{% elif row.days > 30 %}bg-warning{% else %}bg-info{% endif %}">{{ row.days }}</span>
+            </td>
+            <td class="text-end">{{ row.remaining|money:CURRENCY_SYMBOL }}</td>
+            <td><span class="badge bg-{{ row.record.status_badge }}">{{ row.record.get_status_display }}</span></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="8" class="sms-empty">No overdue invoices. Every invoice is within its due date.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if is_paginated %}
+    <div class="card-footer bg-white">
+      {% include "partials/_pagination.html" %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    var labels = [{% for label in chart_labels %}"{{ label }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+    var values = [{% for value in chart_values %}{{ value }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    if (!labels.length || typeof Chart === "undefined") { return; }
+    smsChart("overdueChart", {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [{ label: "Outstanding", data: values, backgroundColor: "#dc3545" }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { display: false } }
+      }
+    });
+  })();
+</script>
+{% endblock %}

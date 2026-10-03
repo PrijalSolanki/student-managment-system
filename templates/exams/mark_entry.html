@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:exam_detail' exam.pk %}"><i class="bi bi-arrow-left me-1"></i>Back to exam</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:mark_entry_list' %}"><i class="bi bi-list-check me-1"></i>All mark entries</a>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="card sms-card mb-3">
+  <div class="card-body row g-2 align-items-end">
+    <div class="col-12 col-md-6">
+      <label class="form-label small" for="examSubject">Subject paper</label>
+      <select class="form-select" id="examSubject" name="exam_subject" onchange="this.form.submit()">
+        {% for es in exam_subjects %}
+          <option value="{{ es.pk }}" {% if exam_subject and exam_subject.pk == es.pk %}selected{% endif %}>
+            {{ es.subject.code }} — {{ es.subject.name }} (max {{ es.max_marks }})
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-md-6 d-flex align-items-end gap-3">
+      <span class="badge bg-light text-dark border" data-marks-summary>0 of 0 entries</span>
+      {% if exam.allow_marks_entry %}
+        <span class="badge bg-success">Mark entry open</span>
+      {% else %}
+        <span class="badge bg-danger">Mark entry locked</span>
+      {% endif %}
+    </div>
+  </div>
+</form>
+
+{% if exam_subject %}
+  <form method="post" data-marks-grid>
+    {% csrf_token %}
+    <input type="hidden" name="exam_subject" value="{{ exam_subject.pk }}">
+
+    <div class="card sms-card">
+      <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <h2 class="h6 mb-0">
+          {{ exam.code }} — {{ exam_subject.subject.code }}
+          <small class="text-muted">Max {{ exam_subject.max_marks }} &middot; Pass {{ exam_subject.pass_marks }}</small>
+        </h2>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle sms-table mb-0">
+          <thead>
+            <tr>
+              <th style="width:6rem">Student</th>
+              <th>Name</th>
+              <th style="width:8rem">Marks</th>
+              <th style="width:6rem">Absent</th>
+              <th>Remark</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td>{{ row.student.student_id }}</td>
+                <td>{{ row.student.full_name }}</td>
+                <td>
+                  <input class="form-control form-control-sm sms-marks-input" type="number" step="0.01" min="0"
+                         max="{{ exam_subject.max_marks }}" name="marks_{{ row.student.pk }}"
+                         value="{{ row.marks }}" data-max="{{ exam_subject.max_marks }}"
+                         {% if row.is_absent %}disabled{% endif %}>
+                </td>
+                <td class="text-center">
+                  <input class="form-check-input" type="checkbox" name="absent_{{ row.student.pk }}"
+                         {% if row.is_absent %}checked{% endif %}>
+                </td>
+                <td>
+                  <input class="form-control form-control-sm" type="text" name="remark_{{ row.student.pk }}"
+                         value="{{ row.remark }}" placeholder="Optional">
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="sms-empty">No students are eligible for this exam.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <small class="text-muted">{{ entered_count }} of {{ rows|length }} row(s) filled &middot; results are recalculated on save</small>
+        <button class="btn btn-primary" type="submit" {% if not exam.allow_marks_entry %}disabled{% endif %}>
+          <i class="bi bi-check2-circle me-1"></i>Save marks
+        </button>
+      </div>
+    </div>
+  </form>
+{% else %}
+  <div class="card sms-card">
+    <div class="card-body text-center text-muted py-5">
+      <i class="bi bi-journals display-5 d-block mb-2"></i>
+      This exam has no subjects yet. Add them from the exam edit page.
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener("change", function (event) {
+    if (event.target.name && event.target.name.indexOf("absent_") === 0) {
+      var row = event.target.closest("tr");
+      if (!row) { return; }
+      var marks = row.querySelector('input[name^="marks_"]');
+      if (marks) {
+        marks.disabled = event.target.checked;
+        if (event.target.checked) { marks.value = ""; }
+      }
+    }
+  });
+</script>
+{% endblock %}

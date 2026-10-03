@@ -1,0 +1,10 @@
+{% extends "base_list.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-primary" href="{% url 'accounts:user_add' %}"><i class="bi bi-plus-lg me-1"></i>Add user</a>
+{% endblock %}
+
+{% block list_toolbar_extra %}
+  <span class="text-muted small">Registration requests stay inactive until an administrator approves them.</span>
+{% endblock %}

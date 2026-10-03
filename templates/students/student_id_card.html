@@ -1,0 +1,38 @@
+{% extends "base_print.html" %}
+{% load ui %}
+
+{% block print_meta %}Generated on {{ generated_at|date:"d M Y, h:i A" }}{% endblock %}
+
+{% block content %}
+<div class="sms-id-card">
+  <div class="sms-id-card-head">
+    <strong>{{ institute.institute_name }}</strong>
+    <span>{{ institute.address }} {% if institute.phone %}&middot; {{ institute.phone }}{% endif %}</span>
+  </div>
+  <div class="sms-id-card-body">
+    {% if student.photo %}
+      <img src="{{ student.photo.url }}" alt="{{ student.full_name }}" class="sms-id-card-photo">
+    {% else %}
+      <span class="sms-id-card-photo is-empty">{{ student.initials }}</span>
+    {% endif %}
+    <div class="sms-id-card-info">
+      <strong>{{ student.full_name }}</strong>
+      <div>ID: {{ student.student_id }}</div>
+      <div>Course: {{ student.course.code|default:"—" }}</div>
+      <div>Dept: {{ student.department.name|default:"—" }}</div>
+      <div>Sem {{ student.semester.number|default:"—" }} &middot; {{ student.batch.name|default:"—" }}</div>
+      <div>Phone: {{ student.phone }}</div>
+    </div>
+  </div>
+  <div class="sms-id-card-foot">
+    <span>{{ institute.institute_code }}</span>
+    <span>{{ institute.email }}</span>
+  </div>
+</div>
+
+<p class="sms-print-meta no-print mt-3">
+  <a class="btn btn-sm btn-primary" href="{% url 'students:student_id_card_download' student.pk %}">
+    <i class="bi bi-file-earmark-pdf me-1"></i>Download PDF
+  </a>
+</p>
+{% endblock %}

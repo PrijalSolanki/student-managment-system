@@ -1,0 +1,37 @@
+{% extends "base_confirm_delete.html" %}
+{% load ui %}
+
+{% block confirm_text %}
+  {% if object.student_id %}
+    Remove the notice <strong>{{ object.title }}</strong> pinned to
+    <strong>{{ object.student.full_name }}</strong> ({{ object.student.student_id }})?
+  {% else %}
+    Delete the notification <strong>{{ object.title }}</strong>? Read receipts and student profile copies
+    of this notice will be removed as well.
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <div class="card sms-card border-danger-subtle">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Confirm deletion</h2>
+        </div>
+        <div class="card-body">
+          <p class="mb-0">{% block confirm_text %}{{ object }}{% endblock %}</p>
+          {% if blocking_reason %}
+            <div class="alert alert-warning mt-3 mb-0"><i class="bi bi-info-circle me-2"></i>{{ blocking_reason }}</div>
+          {% endif %}
+        </div>
+        <div class="card-footer bg-white d-flex gap-2">
+          <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Yes, delete</button>
+          </form>
+          <a class="btn btn-outline-secondary" href="{{ cancel_url|default:request.path }}">Cancel</a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

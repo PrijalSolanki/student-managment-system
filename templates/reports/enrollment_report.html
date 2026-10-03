@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=csv %}"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=xlsx %}"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=pdf %}" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'reports:report_index' %}"><i class="bi bi-arrow-left me-1"></i>Reports</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Total students</div><div class="sms-stat-value">{{ summary.total }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Active</div><div class="sms-stat-value">{{ summary.active }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Graduated</div><div class="sms-stat-value">{{ summary.graduated }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">On leave / inactive</div><div class="sms-stat-value">{{ summary.on_leave|add:summary.inactive }}</div></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-8">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Students by department</h2></div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle sms-table mb-0">
+          <thead><tr><th>Department</th><th class="text-center">Students</th><th class="text-center">Active</th><th class="text-end">Share</th></tr></thead>
+          <tbody>
+            {% for row in summary.by_department %}
+              <tr>
+                <td>{{ row.name }}</td>
+                <td class="text-center">{{ row.total }}</td>
+                <td class="text-center">{{ row.active }}</td>
+                <td class="text-end">{% width_percent row.total summary.total as share %}{{ share }}%</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="sms-empty">No student has been enrolled yet.</td></tr>
+            {% endfor %}
+          </tbody>
+          {% if summary.by_department %}
+            <tfoot>
+              <tr><th>Total</th><th class="text-center">{{ summary.total }}</th><th class="text-center">{{ summary.active }}</th><th class="text-end">100%</th></tr>
+            </tfoot>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Gender split</h2></div>
+      <div class="card-body"><div style="height:220px"><canvas id="genderChart"></canvas></div></div>
+    </div>
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Status</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-7">Active</dt><dd class="col-sm-5 text-end">{{ summary.active }}</dd>
+          <dt class="col-sm-7">Inactive</dt><dd class="col-sm-5 text-end">{{ summary.inactive }}</dd>
+          <dt class="col-sm-7">On leave</dt><dd class="col-sm-5 text-end">{{ summary.on_leave }}</dd>
+          <dt class="col-sm-7">Graduated</dt><dd class="col-sm-5 text-end">{{ summary.graduated }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Top courses</h2></div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle sms-table mb-0">
+          <thead><tr><th>Course</th><th class="text-center">Students</th></tr></thead>
+          <tbody>
+            {% for row in summary.by_course %}
+              <tr><td>{{ row.name }}</td><td class="text-center">{{ row.total }}</td></tr>
+            {% empty %}
+              <tr><td colspan="2" class="sms-empty">No course data.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Semester distribution</h2></div>
+      <div class="card-body"><div style="height:240px"><canvas id="semesterChart"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="card sms-card mt-3">
+  <div class="card-header bg-white"><h2 class="h6 mb-0">Admission trend (last 12 months)</h2></div>
+  <div class="card-body"><div style="height:260px"><canvas id="admissionChart"></canvas></div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    if (typeof Chart === "undefined") { return; }
+    smsChart("genderChart", {
+      type: "doughnut",
+      data: {
+        labels: ["Male", "Female", "Other"],
+        datasets: [{
+          data: [{{ summary.male }}, {{ summary.female }}, {{ summary.other }}],
+          backgroundColor: ["#1f3c88", "#dc3545", "#adb5bd"]
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }
+    });
+
+    var semesterLabels = [{% for row in summary.by_semester %}"Sem {{ row.semester__number|default:'—' }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+    var semesterValues = [{% for row in summary.by_semester %}{{ row.total }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    smsChart("semesterChart", {
+      type: "bar",
+      data: { labels: semesterLabels, datasets: [{ label: "Students", data: semesterValues, backgroundColor: "#1f3c88" }] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+    });
+
+    smsChart("admissionChart", {
+      type: "line",
+      data: {
+        labels: [{% for label in trend.labels %}"{{ label }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{ label: "Admissions", data: [{% for value in trend.values %}{{ value }}{% if not forloop.last %}, {% endif %}{% endfor %}], borderColor: "#198754", tension: 0.3, fill: false }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+    });
+  })();
+</script>
+{% endblock %}

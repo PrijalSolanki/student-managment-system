@@ -1,0 +1,16 @@
+{% extends "base_form.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'notifications:notification_list' %}"><i class="bi bi-arrow-left me-1"></i>Notifications</a>
+{% endblock %}
+
+{% block form_below %}
+  <div class="card sms-card mt-3">
+    <div class="card-body small text-muted">
+      <i class="bi bi-info-circle me-1"></i>
+      Notices addressed to students, courses, departments or batches are copied onto the matching student
+      profiles on save. Leave <strong>Expires at</strong> empty to keep the notice visible until you deactivate it.
+    </div>
+  </div>
+{% endblock %}

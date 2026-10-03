@@ -1,0 +1,24 @@
+{% load ui %}
+<div class="sms-form-grid">
+  {% for field in form %}
+    {% if field.is_hidden %}
+      {{ field }}
+    {% elif field.field.widget.input_type == "checkbox" %}
+      <div class="form-check mb-3">
+        {{ field }}
+        <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+      </div>
+    {% else %}
+      <div class="mb-3{% if field.field.widget.attrs.colspan %} sms-col-{{ field.field.widget.attrs.colspan }}{% endif %}">
+        <label class="form-label" for="{{ field.id_for_label }}">
+          {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+        </label>
+        {{ field|add_class }}
+        {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+      </div>
+    {% endif %}
+  {% endfor %}
+</div>

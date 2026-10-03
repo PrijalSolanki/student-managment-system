@@ -1,0 +1,83 @@
+{% load ui %}
+<div class="table-responsive">
+  <table class="table table-hover align-middle sms-table mb-0">
+    {% if columns %}
+      <thead>
+        <tr>
+          {% if table.select %}<th style="width:2.5rem"><input class="form-check-input" type="checkbox" data-select-all="{{ table.select }}"></th>{% endif %}
+          {% for column in columns %}
+            <th class="{% if column.align %}text-{{ column.align }}{% endif %}">
+              {% if column.sort %}
+                <a class="sms-sort" href="?{% querystring ordering=column.sort %}">
+                  {{ column.label }}
+                  {% if current_ordering == column.sort %}<i class="bi bi-caret-down-fill"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}
+                </a>
+              {% else %}{{ column.label }}{% endif %}
+            </th>
+          {% endfor %}
+          {% if table.actions or table.row_actions %}<th class="text-end" style="width:1px">Actions</th>{% endif %}
+        </tr>
+      </thead>
+    {% endif %}
+    <tbody>
+      {% for row in object_list %}
+        <tr>
+          {% if table.select %}
+            <td><input class="form-check-input" type="checkbox" name="{{ table.select }}" value="{{ row.pk }}" form="sms-bulk-form"></td>
+          {% endif %}
+          {% for column in columns %}
+            <td class="{% if column.align %}text-{{ column.align }}{% endif %}">
+              {% if column.badge %}
+                <span class="badge bg-{{ row|attr:column.badge|status_class }}">{{ row|attr:column.attr|dash }}</span>
+              {% elif column.money %}
+                {{ row|attr:column.attr|money:CURRENCY_SYMBOL }}
+              {% elif column.money_plain %}
+                {{ row|attr:column.attr|money:"" }}
+              {% elif column.pct %}
+                <div class="sms-progress-cell">
+                  <div class="progress" role="progressbar" style="height:.5rem">
+                    <div class="progress-bar {% progress_class row|attr:column.attr %}" style="width:{% width_percent row|attr:column.attr %}%"></div>
+                  </div>
+                  <small>{{ row|attr:column.attr|pct }}</small>
+                </div>
+              {% elif column.date %}
+                {{ row|attr:column.attr|date:column.date|dash }}
+              {% elif column.datetime %}
+                {{ row|attr:column.attr|date:column.datetime|dash }}
+              {% elif column.bool %}
+                {% if row|attr:column.attr %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-dash-circle text-muted"></i>{% endif %}
+              {% elif column.file %}
+                {% with name=row|attr:column.attr %}{% if name %}<a href="{{ name.url }}" target="_blank" rel="noopener"><i class="bi bi-paperclip"></i></a>{% else %}<span class="text-muted">&mdash;</span>{% endif %}{% endwith %}
+              {% else %}
+                {{ row|attr:column.attr|dash }}
+              {% endif %}
+            </td>
+          {% endfor %}
+          {% if table.actions or table.row_actions %}
+            <td class="text-end sms-row-actions">
+              {% if table.actions.detail %}<a class="btn btn-sm btn-outline-primary" href="{% url table.actions.detail row.pk %}" title="View"><i class="bi bi-eye"></i></a>{% endif %}
+              {% if table.actions.edit %}<a class="btn btn-sm btn-outline-secondary" href="{% url table.actions.edit row.pk %}" title="Edit"><i class="bi bi-pencil"></i></a>{% endif %}
+              {% for action in table.actions.extra %}
+                <a class="btn btn-sm btn-outline-secondary" href="{% url action.url row.pk %}" title="{{ action.label }}"><i class="bi {{ action.icon }}"></i></a>
+              {% endfor %}
+              {% if table.actions.delete and user.can('delete_records') %}
+                <form method="post" action="{% url table.actions.delete row.pk %}" class="d-inline"
+                      data-confirm="Delete this record? This cannot be undone.">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger" type="submit" title="Delete"><i class="bi bi-trash"></i></button>
+                </form>
+              {% endif %}
+            </td>
+          {% endif %}
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="{{ table.empty_colspan|default:6 }}" class="sms-empty">
+            <i class="bi bi-inbox display-6 d-block mb-2"></i>
+            {{ empty_message|default:"No records found." }}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

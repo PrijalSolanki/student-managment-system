@@ -1,0 +1,6 @@
+{% extends "base_confirm_delete.html" %}
+{% load ui %}
+
+{% block confirm_text %}
+  Delete the account <strong>{{ object }}</strong>? The account will be removed and the user will no longer be able to sign in.
+{% endblock %}

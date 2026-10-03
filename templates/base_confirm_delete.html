@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card sms-card border-danger-subtle">
+      <div class="card-header bg-white">
+        <h2 class="h6 mb-0 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ heading|default:"Confirm deletion" }}</h2>
+      </div>
+      <div class="card-body">
+        <p class="mb-0">
+          {% block confirm_text %}
+            Are you sure you want to delete <strong>{{ object }}</strong>? This action cannot be undone.
+          {% endblock %}
+        </p>
+        {% if protected_message %}
+          <div class="alert alert-warning mt-3 mb-0"><i class="bi bi-info-circle me-2"></i>{{ protected_message }}</div>
+        {% endif %}
+      </div>
+      <div class="card-footer bg-white d-flex gap-2">
+        <form method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Yes, delete</button>
+        </form>
+        <a class="btn btn-outline-secondary" href="{{ cancel_url|default:request.path }}">Cancel</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

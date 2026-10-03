@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=csv %}"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=xlsx %}"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=pdf %}" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+{% endblock %}
+
+{% block content %}
+<form class="card sms-card mb-3" method="get">
+  <div class="card-body row g-2 align-items-end">
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="reportDate">Report date</label>
+      <input type="date" class="form-control" id="reportDate" name="date" value="{{ date|date:'Y-m-d' }}">
+    </div>
+    <div class="col-6 col-md-3 d-flex gap-2">
+      <button class="btn btn-primary flex-fill" type="submit"><i class="bi bi-search me-1"></i>Show</button>
+      <a class="btn btn-outline-secondary" href="{% url 'attendance:report_daily' %}">Today</a>
+    </div>
+  </div>
+</form>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Records</div><div class="sms-stat-value">{{ data.totals.total }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Present</div><div class="sms-stat-value">{{ data.totals.present }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-danger"><div class="sms-stat-label">Absent</div><div class="sms-stat-value">{{ data.totals.absent }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">On leave</div><div class="sms-stat-value">{{ data.totals.leave }}</div></div></div>
+</div>
+
+<div class="card sms-card">
+  <div class="card-header bg-white"><h2 class="h6 mb-0">Subject wise summary — {{ date|date:"l, d M Y" }}</h2></div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle sms-table mb-0">
+      <thead>
+        <tr>
+          <th>Code</th><th>Subject</th><th>Teacher</th>
+          <th class="text-center">Total</th><th class="text-center">Present</th>
+          <th class="text-center">Absent</th><th class="text-center">Leave</th><th style="width:12rem">Percentage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in data.rows %}
+          <tr>
+            <td><a href="{% url 'academics:subject_detail' row.subject_id %}">{{ row.subject_code }}</a></td>
+            <td>{{ row.subject }}</td>
+            <td>{{ row.teacher }}</td>
+            <td class="text-center">{{ row.total }}</td>
+            <td class="text-center">{{ row.present }}</td>
+            <td class="text-center">{{ row.absent }}</td>
+            <td class="text-center">{{ row.leave }}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="progress flex-grow-1" role="progressbar" style="height:.5rem">
+                  <div class="progress-bar {% progress_class row.percentage %}" style="width:{% width_percent row.percentage %}%"></div>
+                </div>
+                <small class="text-muted">{{ row.percentage }}%</small>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="8" class="sms-empty">No attendance was marked on this date.</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if data.rows %}
+        <tfoot class="table-light">
+          <tr>
+            <th colspan="3">Overall</th>
+            <th class="text-center">{{ data.totals.total }}</th>
+            <th class="text-center">{{ data.totals.present }}</th>
+            <th class="text-center">{{ data.totals.absent }}</th>
+            <th class="text-center">{{ data.totals.leave }}</th>
+            <th>{{ data.totals.percentage }}%</th>
+          </tr>
+        </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+{% endblock %}

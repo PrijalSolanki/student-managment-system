@@ -1,0 +1,16 @@
+{% extends "base_form.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:payment_list' %}"><i class="bi bi-arrow-left me-1"></i>Payments</a>
+{% endblock %}
+
+{% block form_below %}
+  <div class="card sms-card mt-3">
+    <div class="card-body small text-muted">
+      <i class="bi bi-info-circle me-1"></i>
+      Leave <strong>Apply to invoice</strong> empty to record an unallocated credit, then settle invoices
+      later from the student's ledger. Payments cannot be deleted once saved &mdash; cancel them instead.
+    </div>
+  </div>
+{% endblock %}

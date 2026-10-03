@@ -1,0 +1,56 @@
+{% extends "base_print.html" %}
+{% load ui %}
+
+{% block content %}
+<div class="sms-print-grid">
+  <section>
+    <h2 class="sms-print-section">Teacher details</h2>
+    <table class="table table-sm table-bordered">
+      <tbody>
+        <tr><th style="width:35%">Employee ID</th><td>{{ teacher.employee_id|default:"—" }}</td></tr>
+        <tr><th>Name</th><td>{{ teacher.full_name }}</td></tr>
+        <tr><th>Designation</th><td>{{ teacher.designation|default:"—" }}</td></tr>
+        <tr><th>Department</th><td>{{ teacher.department.name|default:"—" }}</td></tr>
+        <tr><th>Email</th><td>{{ teacher.email }}</td></tr>
+        <tr><th>Phone</th><td>{{ teacher.phone }}</td></tr>
+        <tr><th>Date of birth</th><td>{{ teacher.date_of_birth|date:"d M Y"|default:"—" }}</td></tr>
+        <tr><th>Gender</th><td>{{ teacher.get_gender_display }}</td></tr>
+        <tr><th>Qualification</th><td>{{ teacher.qualification|default:"—" }}</td></tr>
+        <tr><th>Specialization</th><td>{{ teacher.specialization|default:"—" }}</td></tr>
+        <tr><th>Joining date</th><td>{{ teacher.joining_date|date:"d M Y"|default:"—" }}</td></tr>
+        <tr><th>Experience</th><td>{{ teacher.experience_years }} year(s)</td></tr>
+        <tr><th>Address</th><td>{{ teacher.address|default:"—" }}{% if teacher.city %}, {{ teacher.city }}{% endif %}</td></tr>
+        <tr><th>Status</th><td>{{ teacher.get_status_display }}</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 class="sms-print-section">Subject assignments</h2>
+    <table class="table table-sm table-bordered">
+      <thead><tr><th>Code</th><th>Subject</th><th>Semester</th><th>Academic year</th></tr></thead>
+      <tbody>
+        {% for assignment in assignments %}
+          <tr>
+            <td>{{ assignment.subject.code }}</td>
+            <td>{{ assignment.subject.name }}</td>
+            <td>{{ assignment.subject.semester.number }}</td>
+            <td>{{ assignment.academic_year|default:"—" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4">No subjects assigned.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h2 class="sms-print-section">Summary</h2>
+    <table class="table table-sm table-bordered">
+      <tbody>
+        <tr><th style="width:60%">Subjects assigned</th><td>{{ assignments|length }}</td></tr>
+        <tr><th>Students taught</th><td>{{ students_taught }}</td></tr>
+        <tr><th>Attendance records</th><td>{{ attendance_total }}</td></tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}

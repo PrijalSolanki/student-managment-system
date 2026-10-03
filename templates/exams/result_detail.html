@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:result_list' %}"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:result_marksheet' result.pk %}" target="_blank"><i class="bi bi-printer me-1"></i>Marksheet</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:student_result_list' result.student.pk %}"><i class="bi bi-clock-history me-1"></i>History</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:result_marksheet' result.pk %}?format=pdf"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3">
+    <div class="sms-stat {% if result.is_pass %}tone-success{% else %}tone-danger{% endif %}">
+      <div class="sms-stat-label">Percentage</div>
+      <div class="sms-stat-value">{{ result.percentage }}%</div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Grade</div><div class="sms-stat-value">{{ result.grade }}</div><small class="text-muted">{{ grade_description }}</small></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Marks</div><div class="sms-stat-value">{{ result.total_marks }}/{{ result.max_marks }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">Rank</div><div class="sms-stat-value">{{ rank|default:"—" }}</div><small class="text-muted">Overall average {{ overall_percentage }}%</small></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-xl-8">
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Subject wise marks — {{ result.exam.code }}</h2></div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle sms-table mb-0">
+          <thead>
+            <tr><th>Code</th><th>Subject</th><th class="text-center">Max</th><th class="text-center">Pass</th>
+              <th class="text-center">Obtained</th><th class="text-center">%</th><th class="text-center">Grade</th><th>Result</th></tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td>{{ row.subject.code }}</td>
+                <td>{{ row.subject.name }}</td>
+                <td class="text-center">{{ row.max_marks }}</td>
+                <td class="text-center">{{ row.pass_marks }}</td>
+                <td class="text-center">
+                  {% if row.is_absent %}<span class="badge bg-secondary">Absent</span>
+                  {% elif row.obtained != None %}{{ row.obtained }}
+                  {% else %}<span class="text-muted">—</span>{% endif %}
+                </td>
+                <td class="text-center">{{ row.percentage }}%</td>
+                <td class="text-center">{{ row.grade }}</td>
+                <td>{% if row.is_pass %}<span class="badge bg-success">Pass</span>{% else %}<span class="badge bg-danger">Fail</span>{% endif %}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="8" class="sms-empty">No marks have been entered for this exam.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Student</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-5">Name</dt>
+          <dd class="col-sm-7"><a href="{% url 'students:student_detail' result.student.pk %}">{{ result.student.full_name }}</a></dd>
+          <dt class="col-sm-5">Student ID</dt><dd class="col-sm-7">{{ result.student.student_id }}</dd>
+          <dt class="col-sm-5">Course</dt><dd class="col-sm-7">{{ result.student.course.name }}</dd>
+          <dt class="col-sm-5">Department</dt><dd class="col-sm-7">{{ result.student.department.name }}</dd>
+          <dt class="col-sm-5">Exam</dt><dd class="col-sm-7">{{ result.exam.name }}</dd>
+          <dt class="col-sm-5">Grade point</dt><dd class="col-sm-7">{{ result.grade_point }}</dd>
+          <dt class="col-sm-5">Failed subjects</dt><dd class="col-sm-7">{{ result.failed_subjects|default:"0" }}</dd>
+          <dt class="col-sm-5">Published</dt>
+          <dd class="col-sm-7">{% if result.published %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

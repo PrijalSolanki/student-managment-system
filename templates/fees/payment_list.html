@@ -1,0 +1,25 @@
+{% extends "base_list.html" %}
+{% load ui %}
+
+{% block list_summary %}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Today</div><div class="sms-stat-value">{{ today_total|money:CURRENCY_SYMBOL }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">This month</div><div class="sms-stat-value">{{ month_total|money:CURRENCY_SYMBOL }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">This year</div><div class="sms-stat-value">{{ year_total|money:CURRENCY_SYMBOL }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Showing</div><div class="sms-stat-value">{{ result_count }}</div><small class="text-muted">receipt(s)</small></div></div>
+  </div>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:fee_report' %}"><i class="bi bi-graph-up me-1"></i>Collection report</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:fee_record_list' %}"><i class="bi bi-receipt me-1"></i>Invoices</a>
+  <a class="btn btn-sm btn-primary" href="{% url 'fees:payment_add' %}"><i class="bi bi-plus-lg me-1"></i>Record payment</a>
+{% endblock %}
+
+{% block list_toolbar_extra %}
+  {% if filters.only_cancelled %}
+    <a class="btn btn-sm btn-outline-danger" href="?{% querystring only_cancelled=None %}"><i class="bi bi-x-circle me-1"></i>Clear cancelled filter</a>
+  {% else %}
+    <a class="btn btn-sm btn-outline-secondary" href="?{% querystring only_cancelled='on' %}"><i class="bi bi-slash-circle me-1"></i>Cancelled only</a>
+  {% endif %}
+{% endblock %}

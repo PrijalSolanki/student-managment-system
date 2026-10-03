@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'attendance:report_daily' %}"><i class="bi bi-calendar-day me-1"></i>Daily report</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'attendance:report_monthly' %}"><i class="bi bi-calendar-month me-1"></i>Monthly report</a>
+  <a class="btn btn-sm btn-primary" href="{% url 'attendance:mark' %}"><i class="bi bi-calendar-check me-1"></i>Mark attendance</a>
+{% endblock %}
+
+{% block content %}
+<form class="card sms-card mb-3" method="get">
+  <div class="card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-6 col-lg-3">
+        <label class="form-label small" for="markDate">Date</label>
+        <input type="date" class="form-control" id="markDate" name="date" value="{{ today|date:'Y-m-d' }}" max="{{ today|date:'Y-m-d' }}">
+      </div>
+      <div class="col-6 col-lg-3">
+        <label class="form-label small" for="id_course">Course</label>
+        <select class="form-select" id="id_course" name="course" required>
+          <option value="">Select course</option>
+          {% for item in courses %}
+            <option value="{{ item.pk }}" data-department="{{ item.department_id }}"
+                    {% if course and course.pk == item.pk %}selected{% endif %}>{{ item.code }} — {{ item.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label small" for="id_semester">Semester</label>
+        <select class="form-select" id="id_semester" name="semester" required>
+          <option value="">Select</option>
+          {% for item in semesters %}
+            <option value="{{ item.pk }}" {% if semester and semester.pk == item.pk %}selected{% endif %}>{{ item }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label small" for="id_subject">Subject</label>
+        <select class="form-select" id="id_subject" name="subject" required>
+          <option value="">Select subject</option>
+          {% for item in subjects %}
+            <option value="{{ item.pk }}" {% if subject and subject.pk == item.pk %}selected{% endif %}>{{ item.code }} — {{ item.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label small" for="id_teacher">Teacher</label>
+        <select class="form-select" id="id_teacher" name="teacher">
+          <option value="">Subject default</option>
+          {% for item in teacher_choices %}
+            <option value="{{ item.pk }}" {% if form.teacher.value|stringformat:'s' == item.pk|stringformat:'s' %}selected{% endif %}>{{ item.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-lg-2">
+        <label class="form-label small" for="id_remarks">Remarks</label>
+        <input type="text" class="form-control" id="id_remarks" name="remarks" value="{{ form.remarks.value|default:'' }}">
+      </div>
+      <div class="col-12 col-lg-4 d-flex gap-2">
+        <button class="btn btn-primary flex-fill" type="submit"><i class="bi bi-arrow-right me-1"></i>Load students</button>
+      </div>
+    </div>
+    {% if form.errors %}
+      <div class="alert alert-danger mt-3 mb-0">
+        {% for field, errors in form.errors.items %}
+          <div>{{ field }}: {{ errors|striptags }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</form>
+
+{% if rows %}
+  <form method="post" data-attendance-grid>
+    {% csrf_token %}
+    <input type="hidden" name="date" value="{{ date|date:'Y-m-d' }}">
+    <input type="hidden" name="subject" value="{{ subject.pk }}">
+    <input type="hidden" name="course" value="{{ course.pk }}">
+    <input type="hidden" name="semester" value="{{ semester.pk }}">
+    <input type="hidden" name="teacher" value="{{ form.teacher.value|default:'' }}">
+    <input type="hidden" name="remarks" value="{{ form.remarks.value|default:'' }}">
+
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <h2 class="h6 mb-0">
+          {{ subject.code }} — {{ subject.name }}
+          <small class="text-muted">{{ date|date:"l, d M Y" }} &middot; {{ rows|length }} student(s)</small>
+        </h2>
+        <div class="d-flex gap-2 align-items-center">
+          <span class="badge bg-light text-dark border" data-attendance-summary>Present 0</span>
+          <div class="btn-group btn-group-sm" role="group" aria-label="Mark all">
+            <button class="btn btn-outline-success" type="button" data-mark-all="PRESENT">All present</button>
+            <button class="btn btn-outline-danger" type="button" data-mark-all="ABSENT">All absent</button>
+            <button class="btn btn-outline-warning" type="button" data-mark-all="LEAVE">All leave</button>
+          </div>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle sms-table mb-0">
+          <thead>
+            <tr><th style="width:5rem">Roll</th><th>Student</th><th style="width:10rem">Status</th></tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td>{{ row.student.student_id }}</td>
+                <td>
+                  <strong>{{ row.student.first_name }} {{ row.student.last_name }}</strong>
+                  {% if row.is_existing %}<span class="badge bg-light text-muted border ms-1">saved</span>{% endif %}
+                  <small class="text-muted d-block">{{ row.student.batch.name|default:"" }} &middot; Sem {{ row.student.semester.number|default:"—" }}</small>
+                </td>
+                <td>
+                  <select class="form-select form-select-sm" name="status_{{ row.student.pk }}">
+                    {% for value, label in status_choices %}
+                      <option value="{{ value }}" {% if row.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <small class="text-muted">{{ already_marked }} record(s) already saved for this session</small>
+        <button class="btn btn-primary" type="submit"><i class="bi bi-check2-circle me-1"></i>Save attendance</button>
+      </div>
+    </div>
+  </form>
+{% else %}
+  <div class="card sms-card">
+    <div class="card-body text-center text-muted py-5">
+      <i class="bi bi-calendar-check display-5 d-block mb-2"></i>
+      Choose a course, semester and subject to load the student list.
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

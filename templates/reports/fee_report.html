@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=csv %}"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=xlsx %}"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=pdf %}" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:fee_report' %}"><i class="bi bi-graph-up me-1"></i>Collection report</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'reports:report_index' %}"><i class="bi bi-arrow-left me-1"></i>Reports</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Total billed</div><div class="sms-stat-value">{{ summary.billed|money:CURRENCY_SYMBOL }}</div><small class="text-muted">{{ summary.records }} invoice(s)</small></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Collected</div><div class="sms-stat-value">{{ summary.collected|money:CURRENCY_SYMBOL }}</div><small class="text-muted">{{ summary.collection_percentage|pct }}</small></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">Outstanding</div><div class="sms-stat-value">{{ summary.pending|money:CURRENCY_SYMBOL }}</div><small class="text-muted">{{ summary.pending_records }} pending</small></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-danger"><div class="sms-stat-label">Overdue</div><div class="sms-stat-value">{{ summary.overdue_amount|money:CURRENCY_SYMBOL }}</div><small class="text-muted">{{ summary.overdue_records }} invoice(s)</small></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Collection by method</h2></div>
+      <div class="table-responsive">
+        <table class="table align-middle sms-table mb-0">
+          <thead><tr><th>Method</th><th class="text-center">Transactions</th><th class="text-end">Amount</th><th class="text-end">Share</th></tr></thead>
+          <tbody>
+            {% for item in methods %}
+              <tr>
+                <td>{{ item.method_display }}</td>
+                <td class="text-center">{{ item.count }}</td>
+                <td class="text-end">{{ item.total|money:CURRENCY_SYMBOL }}</td>
+                <td class="text-end">{% width_percent item.total summary.collected as share %}{{ share }}%</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="sms-empty">No payment has been recorded yet.</td></tr>
+            {% endfor %}
+          </tbody>
+          {% if methods %}
+            <tfoot>
+              <tr>
+                <th>Total collected</th>
+                <th></th>
+                <th class="text-end">{{ summary.collected|money:CURRENCY_SYMBOL }}</th>
+                <th class="text-end">100%</th>
+              </tr>
+            </tfoot>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Collection vs outstanding</h2></div>
+      <div class="card-body"><div style="height:230px"><canvas id="feeSplitChart"></canvas></div></div>
+    </div>
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Invoice status</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-7">Paid invoices</dt><dd class="col-sm-5 text-end">{{ summary.paid_records }}</dd>
+          <dt class="col-sm-7">Pending invoices</dt><dd class="col-sm-5 text-end">{{ summary.pending_records }}</dd>
+          <dt class="col-sm-7">Overdue invoices</dt><dd class="col-sm-5 text-end">{{ summary.overdue_records }}</dd>
+          <dt class="col-sm-7">Cancelled invoices</dt><dd class="col-sm-5 text-end">{{ summary.cancelled_records }}</dd>
+          <dt class="col-sm-7">Collected this month</dt><dd class="col-sm-5 text-end">{{ summary.month_collected|money:CURRENCY_SYMBOL }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    if (typeof Chart === "undefined") { return; }
+    smsChart("feeSplitChart", {
+      type: "doughnut",
+      data: {
+        labels: ["Collected", "Outstanding"],
+        datasets: [{ data: [{{ summary.collected }}, {{ summary.pending }}], backgroundColor: ["#198754", "#f6a20a"] }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }
+    });
+  })();
+</script>
+{% endblock %}

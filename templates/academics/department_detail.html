@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'academics:department_list' %}"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  {% if user.can('manage_academics') %}
+    <a class="btn btn-sm btn-outline-primary" href="{% url 'academics:department_edit' department.pk %}"><i class="bi bi-pencil me-1"></i>Edit</a>
+    <a class="btn btn-sm btn-outline-danger" href="{% url 'academics:department_delete' department.pk %}"><i class="bi bi-trash me-1"></i>Delete</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3">
+    <div class="sms-stat"><div class="sms-stat-label">Courses</div><div class="sms-stat-value">{{ course_count }}</div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="sms-stat tone-info"><div class="sms-stat-label">Subjects</div><div class="sms-stat-value">{{ subject_count }}</div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="sms-stat tone-success"><div class="sms-stat-label">Teachers</div><div class="sms-stat-value">{{ teacher_count }}</div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="sms-stat tone-warning"><div class="sms-stat-label">Students</div><div class="sms-stat-value">{{ student_count }}</div></div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Overview</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4">Code</dt><dd class="col-sm-8">{{ department.code }}</dd>
+          <dt class="col-sm-4">Head</dt><dd class="col-sm-8">{{ department.hod|default:"—"|linebreaksbr }}</dd>
+          <dt class="col-sm-4">Email</dt><dd class="col-sm-8">{{ department.email|default:"—" }}</dd>
+          <dt class="col-sm-4">Phone</dt><dd class="col-sm-8">{{ department.phone|default:"—" }}</dd>
+          <dt class="col-sm-4">Status</dt>
+          <dd class="col-sm-8">
+            <span class="badge bg-{% if department.is_active %}success{% else %}secondary{% endif %}">
+              {% if department.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
+          </dd>
+          <dt class="col-sm-4">Created</dt><dd class="col-sm-8">{{ department.created_at|date:"d M Y" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0">Courses</h2>
+        {% if user.can('manage_academics') %}
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'academics:course_add' %}?department={{ department.pk }}">Add</a>
+        {% endif %}
+      </div>
+      <div class="list-group list-group-flush">
+        {% for course in courses %}
+          <a class="list-group-item list-group-item-action" href="{% url 'academics:course_detail' course.pk %}">
+            <strong>{{ course.code }}</strong> &middot; {{ course.name }}
+            <small class="text-muted d-block">{{ course.get_level_display }} &middot; {{ course.students.count }} students</small>
+          </a>
+        {% empty %}
+          <div class="card-body text-muted small">No courses in this department yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Teachers</h2></div>
+      <div class="list-group list-group-flush">
+        {% for teacher in teachers %}
+          <a class="list-group-item list-group-item-action" href="{% url 'teachers:teacher_detail' teacher.pk %}">
+            {{ teacher.full_name }}
+            <small class="text-muted d-block">{{ teacher.designation|default:"—" }} &middot; {{ teacher.get_status_display }}</small>
+          </a>
+        {% empty %}
+          <div class="card-body text-muted small">No teachers assigned yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Recent students</h2></div>
+      <div class="list-group list-group-flush">
+        {% for student in students %}
+          <a class="list-group-item list-group-item-action" href="{% url 'students:student_detail' student.pk %}">
+            <strong>{{ student.student_id }}</strong> &middot; {{ student.full_name }}
+          </a>
+        {% empty %}
+          <div class="card-body text-muted small">No students in this department.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

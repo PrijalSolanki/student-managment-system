@@ -1,0 +1,17 @@
+{% extends "base_list.html" %}
+{% load ui %}
+
+{% block list_summary %}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Records</div><div class="sms-stat-value">{{ totals.total }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Present</div><div class="sms-stat-value">{{ totals.present }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-danger"><div class="sms-stat-label">Absent</div><div class="sms-stat-value">{{ totals.absent }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">On leave</div><div class="sms-stat-value">{{ totals.leave }}</div></div></div>
+  </div>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'attendance:report_student' %}"><i class="bi bi-person me-1"></i>Student report</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'attendance:report_subject' %}"><i class="bi bi-journal me-1"></i>Subject report</a>
+  <a class="btn btn-sm btn-primary" href="{% url 'attendance:mark' %}"><i class="bi bi-calendar-check me-1"></i>Mark attendance</a>
+{% endblock %}

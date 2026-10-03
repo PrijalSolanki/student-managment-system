@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card sms-card">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0">Event detail</h2>
+        <span class="badge bg-{{ log.action|status_class }}">{{ log.get_action_display }}</span>
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-3">Timestamp</dt><dd class="col-sm-9">{{ log.created_at|date:"d M Y, h:i:s A" }}</dd>
+          <dt class="col-sm-3">User</dt><dd class="col-sm-9">{{ log.username_snapshot|default:"anonymous" }}{% if log.user %} ({{ log.user.get_role_display }}){% endif %}</dd>
+          <dt class="col-sm-3">Module</dt><dd class="col-sm-9">{{ log.module|default:"—"|title }}</dd>
+          <dt class="col-sm-3">Record</dt><dd class="col-sm-9">{{ log.record_type }} #{{ log.record_id|default:"—" }}</dd>
+          <dt class="col-sm-3">Description</dt><dd class="col-sm-9">{{ log.description|default:"—" }}</dd>
+          <dt class="col-sm-3">Record snapshot</dt><dd class="col-sm-9">{{ log.record_repr|default:"—" }}</dd>
+          <dt class="col-sm-3">Request</dt><dd class="col-sm-9"><code>{{ log.http_method }} {{ log.path }}</code></dd>
+          <dt class="col-sm-3">IP address</dt><dd class="col-sm-9">{{ log.ip_address|default:"—" }}</dd>
+          <dt class="col-sm-3">Status code</dt><dd class="col-sm-9">{{ log.status_code|default:"—" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Field changes</h2></div>
+      <div class="card-body">
+        {% if log.changes %}
+          <table class="table table-sm mb-0">
+            <thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead>
+            <tbody>
+              {% for field, change in log.changes.items %}
+                <tr>
+                  <td>{{ field }}</td>
+                  <td class="text-danger small">{{ change.0|default:"—" }}</td>
+                  <td class="text-success small">{{ change.1|default:"—" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="text-muted small mb-0">No field level changes were recorded for this event.</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Client</h2></div>
+      <div class="card-body">
+        <p class="small text-break mb-0">{{ log.user_agent|default:"—" }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'core:audit_list' %}"><i class="bi bi-arrow-left me-1"></i>Back</a>
+{% endblock %}

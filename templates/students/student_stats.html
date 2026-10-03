@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=csv %}"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=xlsx %}"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'students:student_list' %}"><i class="bi bi-people me-1"></i>Student list</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Students</div><div class="sms-stat-value">{{ totals.students }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Male</div><div class="sms-stat-value">{{ totals.male }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Female</div><div class="sms-stat-value">{{ totals.female }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">Other</div><div class="sms-stat-value">{{ totals.other }}</div></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">By department</h2></div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle sms-table mb-0">
+          <thead><tr><th>Department</th><th class="text-center">Total</th><th class="text-center">Active</th><th class="text-center">Male</th><th class="text-center">Female</th></tr></thead>
+          <tbody>
+            {% for row in by_department %}
+              <tr>
+                <td><a href="{% url 'academics:department_detail' row.pk %}">{{ row.name }}</a></td>
+                <td class="text-center">{{ row.total }}</td>
+                <td class="text-center">{{ row.active }}</td>
+                <td class="text-center">{{ row.male }}</td>
+                <td class="text-center">{{ row.female }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="sms-empty">No departments configured.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">By course</h2></div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle sms-table mb-0">
+          <thead><tr><th>Code</th><th>Course</th><th class="text-center">Students</th></tr></thead>
+          <tbody>
+            {% for row in by_course %}
+              <tr>
+                <td>{{ row.code }}</td>
+                <td><a href="{% url 'academics:course_detail' row.pk %}">{{ row.name }}</a></td>
+                <td class="text-center">{{ row.total }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="sms-empty">No courses configured.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">By semester</h2></div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle sms-table mb-0">
+          <thead><tr><th>Semester</th><th class="text-center">Students</th></tr></thead>
+          <tbody>
+            {% for row in by_semester %}
+              <tr><td>{{ row }}</td><td class="text-center">{{ row.total }}</td></tr>
+            {% empty %}
+              <tr><td colspan="2" class="sms-empty">No semesters configured.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="card sms-card">
+          <div class="card-header bg-white"><h2 class="h6 mb-0">By status</h2></div>
+          <div class="list-group list-group-flush">
+            {% for row in by_status %}
+              <div class="list-group-item d-flex justify-content-between">
+                <span>{{ row.status }}</span><strong>{{ row.total }}</strong>
+              </div>
+            {% empty %}
+              <div class="card-body text-muted small">No data.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card sms-card">
+          <div class="card-header bg-white"><h2 class="h6 mb-0">By gender</h2></div>
+          <div class="list-group list-group-flush">
+            {% for row in by_gender %}
+              <div class="list-group-item d-flex justify-content-between">
+                <span>{{ row.gender }}</span><strong>{{ row.total }}</strong>
+              </div>
+            {% empty %}
+              <div class="card-body text-muted small">No data.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

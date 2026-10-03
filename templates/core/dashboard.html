@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+{% load static ui humanize %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'core:dashboard_data' %}" target="_blank" rel="noopener">
+    <i class="bi bi-braces me-1"></i>JSON data
+  </a>
+  <a class="btn btn-sm btn-primary" href="{% url 'attendance:mark' %}"><i class="bi bi-calendar-check me-1"></i>Mark attendance</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3">
+    <div class="sms-stat">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="sms-stat-label">Students</div>
+          <div class="sms-stat-value">{{ stats.students.total|intcomma }}</div>
+          <small class="text-muted">{{ stats.students.active }} active &middot; {{ stats.students.this_month }} new this month</small>
+        </div>
+        <span class="sms-stat-icon"><i class="bi bi-people"></i></span>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="sms-stat tone-success">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="sms-stat-label">Teachers</div>
+          <div class="sms-stat-value">{{ stats.teachers.total|intcomma }}</div>
+          <small class="text-muted">{{ stats.teachers.active }} active &middot; payroll {{ stats.teachers.payroll|money:CURRENCY_SYMBOL }}</small>
+        </div>
+        <span class="sms-stat-icon"><i class="bi bi-person-badge"></i></span>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="sms-stat tone-info">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="sms-stat-label">Attendance today</div>
+          <div class="sms-stat-value">{{ stats.attendance.today.percentage|pct }}</div>
+          <small class="text-muted">{{ stats.attendance.today.present }} present / {{ stats.attendance.today.total }} marked</small>
+        </div>
+        <span class="sms-stat-icon"><i class="bi bi-calendar-check"></i></span>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="sms-stat tone-warning">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="sms-stat-label">Fees pending</div>
+          <div class="sms-stat-value">{{ stats.fees.pending|money:CURRENCY_SYMBOL }}</div>
+          <small class="text-muted">{{ stats.fees.pending_records }} invoice{{ stats.fees.pending_records|pluralize }} &middot; {{ stats.fees.collection_percentage|pct }} collected</small>
+        </div>
+        <span class="sms-stat-icon"><i class="bi bi-cash-coin"></i></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-4">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0">Quick actions</h2>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          <a class="btn btn-outline-primary text-start" href="{% url 'students:student_add' %}"><i class="bi bi-person-plus me-2"></i>Enroll new student</a>
+          <a class="btn btn-outline-primary text-start" href="{% url 'teachers:teacher_add' %}"><i class="bi bi-person-badge me-2"></i>Add teacher</a>
+          <a class="btn btn-outline-primary text-start" href="{% url 'attendance:mark' %}"><i class="bi bi-calendar-check me-2"></i>Mark attendance</a>
+          <a class="btn btn-outline-primary text-start" href="{% url 'exams:exam_add' %}"><i class="bi bi-file-earmark-plus me-2"></i>Create exam</a>
+          <a class="btn btn-outline-primary text-start" href="{% url 'fees:fee_record_add' %}"><i class="bi bi-receipt me-2"></i>Raise invoice</a>
+          <a class="btn btn-outline-primary text-start" href="{% url 'fees:payment_add' %}"><i class="bi bi-wallet2 me-2"></i>Record payment</a>
+          <a class="btn btn-outline-primary text-start" href="{% url 'notifications:notification_add' %}"><i class="bi bi-megaphone me-2"></i>Send announcement</a>
+          <a class="btn btn-outline-primary text-start" href="{% url 'reports:report_index' %}"><i class="bi bi-graph-up me-2"></i>Open reports</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0">Students by department &amp; status</h2>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-7">
+            <canvas id="chartDepartments" height="230" aria-label="Students and teachers by department"></canvas>
+          </div>
+          <div class="col-md-5">
+            <canvas id="chartStatus" height="230" aria-label="Students by status"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-4">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Attendance trend (7 days)</h2></div>
+      <div class="card-body"><canvas id="chartAttendance" height="220" aria-label="Attendance trend"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Fees collected vs invoiced</h2></div>
+      <div class="card-body"><canvas id="chartFees" height="220" aria-label="Fees collected versus invoiced"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Subject wise attendance %</h2></div>
+      <div class="card-body"><canvas id="chartSubjects" height="220" aria-label="Subject wise attendance"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0">Recently enrolled students</h2>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'students:student_list' %}">View all</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Student</th><th>Course</th><th>Semester</th><th>Admitted</th></tr></thead>
+            <tbody>
+              {% for student in recent_students %}
+                <tr>
+                  <td>
+                    <a href="{% url 'students:student_detail' student.pk %}" class="text-decoration-none">
+                      <strong>{{ student.student_id }}</strong> &middot; {{ student.full_name }}
+                    </a>
+                  </td>
+                  <td>{{ student.course.code|default:"—" }}</td>
+                  <td>Sem {{ student.semester.number|default:"—" }}</td>
+                  <td>{{ student.admission_date|date:"d M Y"|default:"—" }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" class="text-center text-muted py-3">No students yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Upcoming examinations</h2></div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Exam</th><th>Course</th><th>Starts</th><th>Status</th></tr></thead>
+            <tbody>
+              {% for exam in upcoming_exams %}
+                <tr>
+                  <td><a class="text-decoration-none" href="{% url 'exams:exam_detail' exam.pk %}">{{ exam.name }}</a></td>
+                  <td>{{ exam.course.code }}</td>
+                  <td>{{ exam.start_date|date:"d M Y" }}</td>
+                  <td>
+                    {% if exam.is_published %}<span class="badge bg-success">Published</span>
+                    {% else %}<span class="badge bg-secondary">Draft</span>{% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" class="text-center text-muted py-3">No upcoming exams scheduled.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0">Overdue fees</h2>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:overdue_report' %}">Full report</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Invoice</th><th>Student</th><th>Due</th><th class="text-end">Outstanding</th></tr></thead>
+            <tbody>
+              {% for row in stats.fees.overdue %}
+                <tr>
+                  <td><a class="text-decoration-none" href="{% url 'fees:fee_record_detail' row.id %}">{{ row.receipt_no }}</a></td>
+                  <td>{{ row.student }}</td>
+                  <td>{{ row.due_date|date:"d M Y" }}<small class="text-danger d-block">{{ row.days_overdue }} days</small></td>
+                  <td class="text-end">{{ row.remaining|money:CURRENCY_SYMBOL }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" class="text-center text-muted py-3">Nothing overdue.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0">Recent activity</h2>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'core:audit_list' %}">Audit trail</a>
+      </div>
+      <div class="card-body">
+        <div class="sms-timeline">
+          {% for entry in latest_activity %}
+            <div class="sms-timeline-item">
+              <div class="d-flex justify-content-between">
+                <strong class="small">{{ entry.get_action_display }}</strong>
+                <small class="text-muted">{{ entry.created_at|timesince }} ago</small>
+              </div>
+              <div class="small">{{ entry.description|default:entry.record_repr|truncatechars:70 }}</div>
+              <small class="text-muted">{{ entry.username_snapshot }}{% if entry.module %} &middot; {{ entry.module }}{% endif %}</small>
+            </div>
+          {% empty %}
+            <p class="text-muted mb-0">No activity recorded yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ charts|json_script:"chart-data" }}
+<script>
+  (function () {
+    var node = document.getElementById("chart-data");
+    var charts = {};
+    try { charts = JSON.parse(node.textContent || "{}"); } catch (err) { charts = {}; }
+
+    var palette = ["#1f3c88", "#f6a21a", "#198754", "#dc3545", "#0dcaf0", "#6f42c1", "#20c997", "#fd7e14"];
+    var gridColor = "#e3e8f0";
+
+    function baseOptions(type) {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: "bottom", labels: { boxWidth: 12 } } },
+        scales: type === "doughnut" ? {} : { y: { beginAtZero: true, grid: { color: gridColor } }, x: { grid: { color: gridColor } } }
+      };
+    }
+
+    if (charts.departments) {
+      smsChart("chartDepartments", {
+        type: "bar",
+        data: {
+          labels: charts.departments.labels || [],
+          datasets: [
+            { label: "Students", data: charts.departments.students || [], backgroundColor: palette[0] },
+            { label: "Teachers", data: charts.departments.teachers || [], backgroundColor: palette[1] }
+          ]
+        },
+        options: baseOptions("bar")
+      });
+    }
+
+    if (charts.status) {
+      smsChart("chartStatus", {
+        type: "doughnut",
+        data: {
+          labels: charts.status.labels || [],
+          datasets: [{ data: charts.status.values || [], backgroundColor: palette }]
+        },
+        options: baseOptions("doughnut")
+      });
+    }
+
+    if (charts.attendance_trend) {
+      smsChart("chartAttendance", {
+        type: "line",
+        data: {
+          labels: charts.attendance_trend.labels || [],
+          datasets: [
+            { label: "Present", data: charts.attendance_trend.present || [], borderColor: palette[2], backgroundColor: "rgba(25,135,84,.15)", fill: true, tension: 0.35 },
+            { label: "Absent", data: charts.attendance_trend.absent || [], borderColor: palette[3], backgroundColor: "rgba(220,53,69,.12)", fill: true, tension: 0.35 },
+            { label: "Leave", data: charts.attendance_trend.leave || [], borderColor: palette[1], backgroundColor: "rgba(246,162,26,.12)", fill: true, tension: 0.35 }
+          ]
+        },
+        options: baseOptions("line")
+      });
+    }
+
+    if (charts.fees) {
+      smsChart("chartFees", {
+        type: "bar",
+        data: {
+          labels: charts.fees.labels || [],
+          datasets: [
+            { label: "Collected", data: charts.fees.collected || [], backgroundColor: palette[2] },
+            { label: "Invoiced", data: charts.fees.invoiced || [], backgroundColor: palette[0] }
+          ]
+        },
+        options: baseOptions("bar")
+      });
+    }
+
+    if (charts.subject_attendance) {
+      smsChart("chartSubjects", {
+        type: "bar",
+        data: {
+          labels: charts.subject_attendance.labels || [],
+          datasets: [{ label: "Attendance %", data: charts.subject_attendance.values || [], backgroundColor: palette[5] }]
+        },
+        options: Object.assign(baseOptions("bar"), { indexAxis: "y" })
+      });
+    }
+  })();
+</script>
+{% endblock %}

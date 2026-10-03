@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=csv %}"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=xlsx %}"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=pdf %}" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'reports:attendance_report' %}"><i class="bi bi-arrow-left me-1"></i>Attendance report</a>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="card sms-card mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-6 col-lg-3">
+        <label class="form-label small" for="threshold">Attendance threshold (%)</label>
+        <input class="form-control" type="number" step="1" min="1" max="100" name="threshold" id="threshold" value="{{ threshold }}">
+      </div>
+      <div class="col-12 col-lg-4 d-flex gap-2">
+        <button class="btn btn-primary" type="submit"><i class="bi bi-funnel me-1"></i>Apply</button>
+        <a class="btn btn-outline-secondary" href="{% url 'reports:defaulters_report' %}">Reset</a>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="card sms-card">
+  <div class="card-header bg-white">
+    <h2 class="h6 mb-0">Students below {{ threshold }}% attendance</h2>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle sms-table mb-0">
+      <thead>
+        <tr><th>Student ID</th><th>Name</th><th>Course</th><th class="text-center">Classes</th>
+          <th class="text-center">Present</th><th class="text-center">Absent</th><th style="width:12rem">Attendance</th></tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>{{ row.student_id }}</td>
+            <td>{{ row.name }}</td>
+            <td>{{ row.course }}</td>
+            <td class="text-center">{{ row.total }}</td>
+            <td class="text-center">{{ row.present }}</td>
+            <td class="text-center">{{ row.absent }}</td>
+            <td>
+              <div class="sms-progress-cell">
+                <div class="progress" role="progressbar" style="height:.5rem">
+                  <div class="progress-bar {% progress_class row.percentage %}" style="width:{% width_percent row.percentage %}%"></div>
+                </div>
+                <small>{{ row.percentage|pct }}</small>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="sms-empty">No student falls below {{ threshold }}% attendance.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

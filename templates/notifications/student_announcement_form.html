@@ -1,0 +1,15 @@
+{% extends "base_form.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'notifications:student_announcement_list' %}"><i class="bi bi-arrow-left me-1"></i>Student notices</a>
+{% endblock %}
+
+{% block form_below %}
+  <div class="card sms-card mt-3">
+    <div class="card-body small text-muted">
+      <i class="bi bi-info-circle me-1"></i>
+      The notice is pinned to the selected student's profile and stays visible until it is removed.
+    </div>
+  </div>
+{% endblock %}

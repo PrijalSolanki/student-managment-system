@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'accounts:user_list' %}"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  <a class="btn btn-sm btn-outline-primary" href="{% url 'accounts:user_edit' account_user.pk %}"><i class="bi bi-pencil me-1"></i>Edit</a>
+  {% if account_user != user %}
+    <form method="post" action="{% url 'accounts:user_toggle' account_user.pk %}" class="d-inline">
+      {% csrf_token %}
+      <button class="btn btn-sm btn-outline-warning" type="submit">
+        <i class="bi bi-{% if account_user.is_active %}pause-circle{% else %}play-circle{% endif %} me-1"></i>
+        {% if account_user.is_active %}Deactivate{% else %}Activate{% endif %}
+      </button>
+    </form>
+    <a class="btn btn-sm btn-outline-danger" href="{% url 'accounts:user_delete' account_user.pk %}"><i class="bi bi-trash me-1"></i>Delete</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card sms-card mb-3">
+      <div class="card-body text-center">
+        <span class="sms-avatar mb-2" style="width:80px;height:80px;font-size:1.4rem">{{ account_user.initials }}</span>
+        <h2 class="h5 mb-0">{{ account_user.display_name }}</h2>
+        <p class="text-muted small mb-2">@{{ account_user.username }}</p>
+        <span class="badge bg-{{ account_user.role_badge }}">{{ account_user.get_role_display }}</span>
+        <span class="badge bg-{% if account_user.is_active %}success{% else %}secondary{% endif %} ms-1">
+          {% if account_user.is_active %}Active{% else %}Inactive{% endif %}
+        </span>
+      </div>
+    </div>
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Permissions</h2></div>
+      <ul class="list-group list-group-flush">
+        {% for item in permissions_summary %}
+          <li class="list-group-item small"><i class="bi bi-check2-circle text-success me-2"></i>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Account details</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-3">Email</dt><dd class="col-sm-9">{{ account_user.email|default:"—" }}</dd>
+          <dt class="col-sm-3">Phone</dt><dd class="col-sm-9">{{ account_user.phone|default:"—" }}</dd>
+          <dt class="col-sm-3">Department</dt><dd class="col-sm-9">{{ account_user.department.name|default:"—" }}</dd>
+          <dt class="col-sm-3">Designation</dt><dd class="col-sm-9">{{ account_user.designation|default:"—" }}</dd>
+          <dt class="col-sm-3">Last login</dt><dd class="col-sm-9">{{ account_user.last_login|date:"d M Y, h:i A"|default:"Never" }}</dd>
+          <dt class="col-sm-3">Date joined</dt><dd class="col-sm-9">{{ account_user.date_joined|date:"d M Y" }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Recent activity</h2></div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead><tr><th>When</th><th>Action</th><th>Description</th><th>Module</th></tr></thead>
+          <tbody>
+            {% for entry in activity %}
+              <tr>
+                <td class="text-nowrap">{{ entry.created_at|date:"d M H:i" }}</td>
+                <td><span class="badge bg-{{ entry.action|status_class }}">{{ entry.get_action_display }}</span></td>
+                <td>{{ entry.description|default:entry.record_repr|truncatechars:55 }}</td>
+                <td class="text-muted">{{ entry.module|default:"—"|title }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center text-muted py-3">No activity recorded for this account.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,6 @@
+{% extends "base_confirm_delete.html" %}
+{% load ui %}
+
+{% block confirm_text %}
+  Delete the course <strong>{{ object }}</strong>? {{ student_count }} student(s) and {{ subject_count }} subject(s) are linked to it.
+{% endblock %}

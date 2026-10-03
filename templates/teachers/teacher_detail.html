@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'teachers:teacher_list' %}"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'teachers:teacher_print' teacher.pk %}" target="_blank"><i class="bi bi-printer me-1"></i>Print</a>
+  {% if user.can('manage_teachers') %}
+    <a class="btn btn-sm btn-outline-primary" href="{% url 'teachers:teacher_edit' teacher.pk %}"><i class="bi bi-pencil me-1"></i>Edit</a>
+    <a class="btn btn-sm btn-outline-danger" href="{% url 'teachers:teacher_delete' teacher.pk %}"><i class="bi bi-trash me-1"></i>Delete</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card sms-card mb-3">
+      <div class="card-body text-center">
+        {% if teacher.photo %}
+          <img src="{{ teacher.photo.url }}" alt="{{ teacher.full_name }}" class="sms-avatar-lg mb-2">
+        {% else %}
+          <span class="sms-avatar-lg mb-2">{{ teacher.initials }}</span>
+        {% endif %}
+        <h2 class="h5 mb-1">{{ teacher.full_name }}</h2>
+        <p class="text-muted small mb-2">{{ teacher.designation|default:"Faculty" }}{% if teacher.department %} &middot; {{ teacher.department.name }}{% endif %}</p>
+        <span class="badge bg-{{ teacher.status|status_class }}">{{ teacher.get_status_display }}</span>
+      </div>
+      <div class="list-group list-group-flush">
+        <div class="list-group-item"><i class="bi bi-hash me-2 text-muted"></i>{{ teacher.employee_id|default:"—" }}</div>
+        <div class="list-group-item"><i class="bi bi-envelope me-2 text-muted"></i>{{ teacher.email }}</div>
+        <div class="list-group-item"><i class="bi bi-telephone me-2 text-muted"></i>{{ teacher.phone }}</div>
+        <div class="list-group-item"><i class="bi bi-calendar3 me-2 text-muted"></i>Joined {{ teacher.joining_date|date:"d M Y"|default:"—" }}</div>
+        <div class="list-group-item"><i class="bi bi-briefcase me-2 text-muted"></i>{{ teacher.experience_years }} year(s) experience</div>
+      </div>
+    </div>
+
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Personal details</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0 small">
+          <dt class="col-sm-5">Date of birth</dt><dd class="col-sm-7">{{ teacher.date_of_birth|date:"d M Y"|default:"—" }}</dd>
+          <dt class="col-sm-5">Gender</dt><dd class="col-sm-7">{{ teacher.get_gender_display }}</dd>
+          <dt class="col-sm-5">Blood group</dt><dd class="col-sm-7">{{ teacher.blood_group|default:"—" }}</dd>
+          <dt class="col-sm-5">Qualification</dt><dd class="col-sm-7">{{ teacher.qualification|default:"—" }}</dd>
+          <dt class="col-sm-5">Specialization</dt><dd class="col-sm-7">{{ teacher.specialization|default:"—" }}</dd>
+          <dt class="col-sm-5">Location</dt><dd class="col-sm-7">{{ teacher.city|default:"—" }}{% if teacher.state %}, {{ teacher.state }}{% endif %}</dd>
+        </dl>
+        {% if teacher.address %}<p class="small text-muted mt-2 mb-0">{{ teacher.address|linebreaksbr }}</p>{% endif %}
+        {% if teacher.bio %}<hr><p class="small mb-0">{{ teacher.bio|linebreaksbr }}</p>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-xl-3">
+        <div class="sms-stat"><div class="sms-stat-label">Subjects</div><div class="sms-stat-value">{{ assignments|length }}</div></div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="sms-stat tone-info"><div class="sms-stat-label">Students taught</div><div class="sms-stat-value">{{ students_taught }}</div></div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="sms-stat tone-success"><div class="sms-stat-label">Attendance marked</div><div class="sms-stat-value">{{ attendance_total }}</div></div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="sms-stat tone-warning"><div class="sms-stat-label">Present today</div><div class="sms-stat-value">{{ attendance_marked_today }}</div></div>
+      </div>
+    </div>
+
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0">Subject assignments</h2>
+        {% if user.can('manage_teachers') %}
+          <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#assignSubjectModal"><i class="bi bi-plus-lg"></i></button>
+        {% endif %}
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle sms-table mb-0">
+          <thead><tr><th>Code</th><th>Subject</th><th>Semester</th><th>Year</th><th class="text-end">Actions</th></tr></thead>
+          <tbody>
+            {% for assignment in assignments %}
+              <tr>
+                <td><a href="{% url 'academics:subject_detail' assignment.subject.pk %}">{{ assignment.subject.code }}</a></td>
+                <td>{{ assignment.subject.name }}</td>
+                <td>{{ assignment.subject.semester.number }}</td>
+                <td>{{ assignment.academic_year|default:"—" }}</td>
+                <td class="text-end sms-row-actions">
+                  {% if user.can('manage_teachers') %}
+                    <form method="post" action="{% url 'teachers:teacher_assignment_delete' assignment.pk %}" data-confirm="Remove this assignment?">
+                      {% csrf_token %}
+                      <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="sms-empty">No subjects assigned yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Recent attendance entries</h2></div>
+      <div class="list-group list-group-flush">
+        {% for record in attendance_records %}
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <span><strong>{{ record.date|date:"d M Y" }}</strong> &middot; {{ record.get_status_display }}</span>
+            <span class="text-muted small">{{ record.subject.code }} &middot; {{ record.session }}</span>
+          </div>
+        {% empty %}
+          <div class="card-body text-muted small">No attendance records found.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if user.can('manage_teachers') %}
+<div class="modal fade" id="assignSubjectModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" method="post" action="{% url 'teachers:teacher_assignment_create' teacher.pk %}">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h2 class="modal-title h6">Assign subject</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        {% include "partials/_form_fields.html" with form=assignment_form %}
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" type="submit">Assign</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

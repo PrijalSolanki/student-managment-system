@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:result_list' %}"><i class="bi bi-arrow-left me-1"></i>Back</a>
+{% endblock %}
+
+{% block content %}
+<div class="card sms-card">
+  <div class="card-header bg-white"><h2 class="h6 mb-0">Grading policy</h2></div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle sms-table mb-0">
+      <thead>
+        <tr><th>Grade</th><th>Percentage range</th><th>Grade point</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        {% for band in grade_scale %}
+          <tr>
+            <td><span class="badge bg-{{ band.grade|status_class }}">{{ band.grade }}</span></td>
+            <td>{{ band.min }}% &ndash; {{ band.max }}%</td>
+            <td>{{ band.point }}</td>
+            <td>{{ band.description }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer bg-white small text-muted">
+    A student passes an exam when the overall percentage reaches 40% and no subject falls below its pass mark.
+  </div>
+</div>
+{% endblock %}

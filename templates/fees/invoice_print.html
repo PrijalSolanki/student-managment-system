@@ -1,0 +1,67 @@
+{% extends "base_print.html" %}
+{% load ui %}
+
+{% block print_meta %}Invoice {{ record.invoice_no }} &middot; printed {% now "d M Y, h:i A" %}{% endblock %}
+
+{% block content %}
+<div class="sms-print-grid">
+  <section>
+    <h2 class="sms-print-section">Bill to</h2>
+    <table class="table table-sm table-bordered">
+      <tbody>
+        <tr><th style="width:34%">Student</th><td>{{ student.full_name }}</td></tr>
+        <tr><th>Student ID</th><td>{{ student.student_id }}</td></tr>
+        <tr><th>Course</th><td>{{ student.course.name }}</td></tr>
+        <tr><th>Semester</th><td>{{ student.semester }}</td></tr>
+        <tr><th>Department</th><td>{{ student.department.name }}</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 class="sms-print-section">Invoice details</h2>
+    <table class="table table-sm table-bordered">
+      <tbody>
+        <tr><th style="width:44%">Invoice number</th><td>{{ record.invoice_no }}</td></tr>
+        <tr><th>Fee type</th><td>{{ record.fee_type.name }}</td></tr>
+        <tr><th>Issue date</th><td>{{ record.created_at|date:"d M Y" }}</td></tr>
+        <tr><th>Due date</th><td>{{ record.due_date|date:"d M Y" }}</td></tr>
+        <tr><th>Academic year</th><td>{{ record.academic_year|default:"—" }}</td></tr>
+        <tr><th>Status</th><td>{{ record.get_status_display }}</td></tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<h2 class="sms-print-section">Charges</h2>
+<table class="table table-sm table-bordered">
+  <thead>
+    <tr><th>Description</th><th class="text-end">Amount</th><th class="text-end">Discount</th><th class="text-end">Net payable</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>{{ record.fee_type.name }}</td>
+      <td class="text-end">{{ record.amount|money:CURRENCY_SYMBOL }}</td>
+      <td class="text-end">{{ record.discount|money:CURRENCY_SYMBOL }}</td>
+      <td class="text-end">{{ record.net_amount|money:CURRENCY_SYMBOL }}</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <th colspan="3">Total payable</th>
+      <th class="text-end">{{ record.net_amount|money:CURRENCY_SYMBOL }}</th>
+    </tr>
+    <tr>
+      <th colspan="3">Received</th>
+      <th class="text-end">{{ record.paid_amount|money:CURRENCY_SYMBOL }}</th>
+    </tr>
+    <tr>
+      <th colspan="3">Balance due</th>
+      <th class="text-end">{{ record.remaining_amount|money:CURRENCY_SYMBOL }}</th>
+    </tr>
+  </tfoot>
+</table>
+
+{% if record.notes %}<p class="small"><strong>Note:</strong> {{ record.notes }}</p>{% endif %}
+<p class="sms-print-meta mt-3">Please pay before the due date. This is a computer generated invoice.</p>
+{% endblock %}

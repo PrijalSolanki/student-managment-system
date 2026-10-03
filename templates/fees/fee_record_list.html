@@ -1,0 +1,31 @@
+{% extends "base_list.html" %}
+{% load ui %}
+
+{% block list_summary %}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Total billed</div><div class="sms-stat-value">{{ billed|money:CURRENCY_SYMBOL }}</div><small class="text-muted">{{ records }} invoice(s)</small></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Collected</div><div class="sms-stat-value">{{ collected|money:CURRENCY_SYMBOL }}</div><small class="text-muted">{{ collection_percentage|pct }}</small></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">Outstanding</div><div class="sms-stat-value">{{ pending|money:CURRENCY_SYMBOL }}</div><small class="text-muted">{{ pending_records }} pending</small></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-danger"><div class="sms-stat-label">Overdue</div><div class="sms-stat-value">{{ overdue_amount|money:CURRENCY_SYMBOL }}</div><small class="text-muted">{{ overdue_records }} invoice(s)</small></div></div>
+  </div>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:overdue_report' %}"><i class="bi bi-exclamation-circle me-1"></i>Overdue</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:fee_report' %}"><i class="bi bi-graph-up me-1"></i>Collection report</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:payment_list' %}"><i class="bi bi-cash-coin me-1"></i>Payments</a>
+  <a class="btn btn-sm btn-primary" href="{% url 'fees:fee_record_add' %}"><i class="bi bi-plus-lg me-1"></i>Add invoice</a>
+{% endblock %}
+
+{% block list_toolbar_extra %}
+  {% if filters.overdue_only %}
+    <a class="btn btn-sm btn-outline-danger" href="?{% querystring overdue_only=None %}">
+      <i class="bi bi-x-circle me-1"></i>Clear overdue filter
+    </a>
+  {% else %}
+    <a class="btn btn-sm btn-outline-secondary" href="?{% querystring overdue_only='on' %}">
+      <i class="bi bi-clock-history me-1"></i>Overdue only
+    </a>
+  {% endif %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:bulk_invoice_generate' %}"><i class="bi bi-receipt me-1"></i>Bulk generate</a>
+{% endblock %}

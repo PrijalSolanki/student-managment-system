@@ -1,0 +1,8 @@
+{% extends "base_confirm_delete.html" %}
+{% load ui %}
+
+{% block heading %}Delete examination{% endblock %}
+
+{% block confirm_text %}
+  Delete the exam <strong>{{ object }}</strong>? {{ blocking_reason }}
+{% endblock %}

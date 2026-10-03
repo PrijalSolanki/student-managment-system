@@ -1,0 +1,87 @@
+{% extends "base_list.html" %}
+{% load ui %}
+
+{% block list_summary %}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Total notices</div><div class="sms-stat-value">{{ result_count }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Active</div><div class="sms-stat-value">{{ active_total }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">Unread by me</div><div class="sms-stat-value">{{ unread_total }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Pinned</div><div class="sms-stat-value">{{ pinned_total }}</div></div></div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-lg-7">
+      <div class="card sms-card h-100">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h2 class="h6 mb-0">Unread for me</h2>
+          {% if unread_total %}
+            <form method="post" action="{% url 'notifications:notifications_mark_all_read' %}" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.path }}">
+              <button class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-check2-all me-1"></i>Mark all read</button>
+            </form>
+          {% endif %}
+        </div>
+        <div class="list-group list-group-flush">
+          {% for item in unread_list %}
+            <a class="list-group-item list-group-item-action" href="{% url 'notifications:notification_detail' item.pk %}">
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                  <i class="bi {{ item.icon }} me-1 text-{{ item.badge }}"></i>
+                  <strong>{{ item.title }}</strong>
+                  <div class="small text-muted">{{ item.body|truncate_words_text:14 }}</div>
+                </div>
+                <span class="badge bg-{{ item.badge }}">{{ item.get_priority_display }}</span>
+              </div>
+            </a>
+          {% empty %}
+            <div class="list-group-item text-center text-muted py-4">
+              <i class="bi bi-check2-circle display-6 d-block mb-2"></i>You have read every notice.
+            </div>
+          {% endfor %}
+        </div>
+        <div class="card-footer bg-white text-end">
+          <a href="{% url 'notifications:notification_inbox' %}">Open inbox <i class="bi bi-arrow-right"></i></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card sms-card h-100">
+        <div class="card-header bg-white"><h2 class="h6 mb-0">Expiring soon</h2></div>
+        <div class="list-group list-group-flush">
+          {% for item in expiring %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <i class="bi {{ item.icon }} me-1 text-{{ item.badge }}"></i>{{ item.title }}
+                <div class="small text-muted">Expires {{ item.expires_at|date:"d M Y, H:i" }}</div>
+              </div>
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'notifications:notification_edit' item.pk %}">Edit</a>
+            </div>
+          {% empty %}
+            <div class="list-group-item text-center text-muted py-4">No notice expires in the next 3 days.</div>
+          {% endfor %}
+        </div>
+        <div class="card-footer bg-white text-end">
+          <a href="{% url 'notifications:notification_stats' %}"><i class="bi bi-graph-up me-1"></i>Notification report</a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'notifications:notification_inbox' %}"><i class="bi bi-inbox me-1"></i>My inbox</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'notifications:student_announcement_list' %}"><i class="bi bi-person-badge me-1"></i>Student notices</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'notifications:notification_stats' %}"><i class="bi bi-graph-up me-1"></i>Report</a>
+  <a class="btn btn-sm btn-primary" href="{% url 'notifications:notification_add' %}"><i class="bi bi-plus-lg me-1"></i>New notice</a>
+{% endblock %}
+
+{% block list_toolbar_extra %}
+  {% if filters.is_pinned %}
+    <a class="btn btn-sm btn-outline-danger" href="?{% querystring is_pinned=None %}"><i class="bi bi-x-circle me-1"></i>Clear pinned filter</a>
+  {% else %}
+    <a class="btn btn-sm btn-outline-secondary" href="?{% querystring is_pinned='on' %}"><i class="bi bi-pin-angle me-1"></i>Pinned only</a>
+  {% endif %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'notifications:student_announcement_add' %}"><i class="bi bi-person-badge me-1"></i>Send student notice</a>
+{% endblock %}

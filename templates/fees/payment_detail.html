@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:payment_receipt' payment.pk %}" target="_blank"><i class="bi bi-printer me-1"></i>Print receipt</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:payment_receipt' payment.pk %}?format=pdf"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:student_ledger' payment.student.pk %}"><i class="bi bi-journal-text me-1"></i>Ledger</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:collect_payment' payment.student.pk %}"><i class="bi bi-plus-lg me-1"></i>Collect more</a>
+  {% if not payment.is_cancelled %}
+    <form method="post" action="{% url 'fees:payment_cancel' payment.pk %}" class="d-inline"
+          data-confirm="Cancel receipt {{ payment.receipt_no }}? The invoice balance will be restored.">
+      {% csrf_token %}
+      <button class="btn btn-sm btn-outline-warning" type="submit"><i class="bi bi-x-octagon me-1"></i>Cancel payment</button>
+    </form>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3">
+    <div class="sms-stat {% if payment.is_cancelled %}tone-danger{% else %}tone-success{% endif %}">
+      <div class="sms-stat-label">Amount</div>
+      <div class="sms-stat-value">{{ payment.amount|money:CURRENCY_SYMBOL }}</div>
+      <small class="text-muted">{% if payment.is_cancelled %}Cancelled{% else %}Received{% endif %}</small></div>
+  </div>
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Receipt no</div><div class="sms-stat-value h6">{{ payment.receipt_no }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Method</div><div class="sms-stat-value h6">{{ payment.get_method_display }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Date</div><div class="sms-stat-value h6">{{ payment.payment_date|date:"d M Y" }}</div></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-xl-7">
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Payment details</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4">Student</dt>
+          <dd class="col-sm-8"><a href="{% url 'students:student_detail' payment.student.pk %}">{{ payment.student.full_name }}</a> ({{ payment.student.student_id }})</dd>
+          <dt class="col-sm-4">Applied to</dt>
+          <dd class="col-sm-8">
+            {% if payment.fee_record_id %}
+              <a href="{% url 'fees:fee_record_detail' payment.fee_record.pk %}">{{ payment.fee_record.invoice_no }}</a>
+              &middot; balance {{ payment.fee_record.remaining_amount|money:CURRENCY_SYMBOL }}
+            {% else %}
+              <span class="badge bg-light text-dark border">Unallocated credit</span>
+            {% endif %}
+          </dd>
+          <dt class="col-sm-4">Payment date</dt><dd class="col-sm-8">{{ payment.payment_date|date:"d M Y" }}</dd>
+          <dt class="col-sm-4">Method</dt><dd class="col-sm-8">{{ payment.get_method_display }}</dd>
+          <dt class="col-sm-4">Reference</dt><dd class="col-sm-8">{{ payment.reference_no|default:"—" }}</dd>
+          <dt class="col-sm-4">Received by</dt><dd class="col-sm-8">{{ payment.received_by|default:"System" }}</dd>
+          <dt class="col-sm-4">Recorded on</dt><dd class="col-sm-8">{{ payment.created_at|date:"d M Y, h:i A" }}</dd>
+          <dt class="col-sm-4">Remarks</dt><dd class="col-sm-8">{{ payment.remarks|default:"—" }}</dd>
+          <dt class="col-sm-4">Status</dt>
+          <dd class="col-sm-8">{% if payment.is_cancelled %}<span class="badge bg-secondary">Cancelled</span>{% else %}<span class="badge bg-success">Active</span>{% endif %}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-5">
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Student fee position</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-6">Invoices</dt>
+          <dd class="col-sm-6 text-end">{{ payment.student.fee_records.count }}</dd>
+          <dt class="col-sm-6">Payments</dt>
+          <dd class="col-sm-6 text-end">{{ payment.student.payments.count }}</dd>
+        </dl>
+        <a class="btn btn-sm btn-outline-primary w-100 mt-3" href="{% url 'fees:student_ledger' payment.student.pk %}">
+          <i class="bi bi-journal-text me-1"></i>Open ledger
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

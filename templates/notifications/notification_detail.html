@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'notifications:notification_list' %}"><i class="bi bi-arrow-left me-1"></i>Notifications</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'notifications:notification_broadcast_preview' notification.pk %}"><i class="bi bi-people me-1"></i>Audience preview</a>
+  <form method="post" action="{% url 'notifications:notification_toggle_pin' notification.pk %}" class="d-inline">
+    {% csrf_token %}
+    <button class="btn btn-sm btn-outline-secondary" type="submit">
+      <i class="bi bi-pin-angle me-1"></i>{% if notification.is_pinned %}Unpin{% else %}Pin{% endif %}
+    </button>
+  </form>
+  <form method="post" action="{% url 'notifications:notification_toggle_active' notification.pk %}" class="d-inline"
+        data-confirm="{% if notification.is_active %}Deactivate{% else %}Activate{% endif %} this notice?">
+    {% csrf_token %}
+    <button class="btn btn-sm btn-outline-{% if notification.is_active %}warning{% else %}success{% endif %}" type="submit">
+      <i class="bi bi-{% if notification.is_active %}pause{% else %}play{% endif %} me-1"></i>
+      {% if notification.is_active %}Deactivate{% else %}Activate{% endif %}
+    </button>
+  </form>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'notifications:notification_edit' notification.pk %}"><i class="bi bi-pencil me-1"></i>Edit</a>
+  <a class="btn btn-sm btn-outline-danger" href="{% url 'notifications:notification_delete' notification.pk %}"><i class="bi bi-trash me-1"></i>Delete</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white d-flex align-items-center gap-2">
+        <i class="bi {{ notification.icon }} fs-5 text-{{ notification.badge }}"></i>
+        <span class="badge bg-{{ notification.badge }}">{{ notification.get_priority_display }}</span>
+        {% if notification.is_pinned %}<span class="badge bg-secondary"><i class="bi bi-pin-angle me-1"></i>Pinned</span>{% endif %}
+        {% if not notification.is_active %}<span class="badge bg-secondary">Inactive</span>{% endif %}
+      </div>
+      <div class="card-body">
+        <h1 class="h5">{{ notification.title }}</h1>
+        <p class="mb-3" style="white-space:pre-line">{{ notification.body }}</p>
+
+        {% if notification.attachment %}
+          <a class="btn btn-sm btn-outline-primary" href="{{ notification.attachment.url }}" target="_blank" rel="noopener">
+            <i class="bi bi-paperclip me-1"></i>Download attachment
+          </a>
+        {% endif %}
+        {% if notification.action_url %}
+          <a class="btn btn-sm btn-outline-primary" href="{{ notification.action_url }}">
+            <i class="bi bi-box-arrow-up-right me-1"></i>{{ notification.action_url }}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Recent readers</h2></div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle sms-table mb-0">
+          <thead><tr><th>User</th><th>Read at</th></tr></thead>
+          <tbody>
+            {% for read in readers %}
+              <tr><td>{{ read.user.get_full_name|default:read.user.username }}</td><td>{{ read.read_at|date:"d M Y, H:i" }}</td></tr>
+            {% empty %}
+              <tr><td colspan="2" class="sms-empty">Nobody has opened this notice yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Delivery</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-5">Audience</dt><dd class="col-sm-7">{{ notification.get_audience_display }}</dd>
+          <dt class="col-sm-5">Scope</dt><dd class="col-sm-7">{{ notification.scope_label }}</dd>
+          <dt class="col-sm-5">Read receipts</dt><dd class="col-sm-7">{{ notification.read_count }}</dd>
+          <dt class="col-sm-5">Student profiles</dt><dd class="col-sm-7">{{ pinned_students }}</dd>
+          <dt class="col-sm-5">Created by</dt><dd class="col-sm-7">{{ notification.created_by|default:"System" }}</dd>
+          <dt class="col-sm-5">Created</dt><dd class="col-sm-7">{{ notification.created_at|date:"d M Y, H:i" }}</dd>
+          <dt class="col-sm-5">Expires</dt><dd class="col-sm-7">{{ notification.expires_at|date:"d M Y, H:i"|default:"Never" }}</dd>
+        </dl>
+        <a class="btn btn-sm btn-outline-secondary w-100 mt-3" href="{% url 'notifications:notification_broadcast_preview' notification.pk %}">
+          <i class="bi bi-people me-1"></i>Preview audience
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

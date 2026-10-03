@@ -1,0 +1,99 @@
+{% extends "base_print.html" %}
+{% load ui %}
+
+{% block print_meta %}Generated on {{ generated_at|date:"d M Y, h:i A" }} by {{ user.display_name }}{% endblock %}
+
+{% block content %}
+<div class="sms-print-grid">
+  <section>
+    <h2 class="sms-print-section">Student details</h2>
+    <table class="table table-sm table-bordered">
+      <tbody>
+        <tr><th style="width:34%">Student ID</th><td>{{ student.student_id }}</td></tr>
+        <tr><th>Name</th><td>{{ student.full_name }}</td></tr>
+        <tr><th>Date of birth</th><td>{{ student.date_of_birth|date:"d M Y" }}</td></tr>
+        <tr><th>Gender</th><td>{{ student.get_gender_display }}</td></tr>
+        <tr><th>Blood group</th><td>{{ student.get_blood_group_display|default:"—" }}</td></tr>
+        <tr><th>Category</th><td>{{ student.get_category_display }}</td></tr>
+        <tr><th>Religion</th><td>{{ student.religion|default:"—" }}</td></tr>
+        <tr><th>Nationality</th><td>{{ student.nationality }}</td></tr>
+        <tr><th>Email</th><td>{{ student.email }}</td></tr>
+        <tr><th>Phone</th><td>{{ student.phone }}</td></tr>
+        <tr><th>Date of admission</th><td>{{ student.admission_date|date:"d M Y" }}</td></tr>
+        <tr><th>Status</th><td>{{ student.get_status_display }}</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="sms-print-section">Address &amp; guardian</h2>
+    <table class="table table-sm table-bordered">
+      <tbody>
+        <tr><th style="width:34%">Address</th><td>{{ student.address|default:"—" }}{% if student.city %}, {{ student.city }}{% endif %}{% if student.state %}, {{ student.state }}{% endif %}{% if student.pincode %} - {{ student.pincode }}{% endif %}</td></tr>
+        <tr><th>Guardian</th><td>{{ student.guardian_name|default:"—" }} ({{ student.guardian_relation|default:"—" }})</td></tr>
+        <tr><th>Guardian phone</th><td>{{ student.guardian_phone|default:"—" }}</td></tr>
+        <tr><th>Emergency contact</th><td>{{ student.emergency_contact|default:"—" }}</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 class="sms-print-section">Academic record</h2>
+    <table class="table table-sm table-bordered">
+      <tbody>
+        <tr><th style="width:34%">Department</th><td>{{ student.department.name }}</td></tr>
+        <tr><th>Course</th><td>{{ student.course.code }} — {{ student.course.name }}</td></tr>
+        <tr><th>Semester</th><td>{{ student.semester }}</td></tr>
+        <tr><th>Batch</th><td>{{ student.batch.name }}</td></tr>
+        <tr><th>Previous qualification</th><td>{{ student.previous_qualification|default:"—" }}</td></tr>
+        <tr><th>Previous percentage</th><td>{{ student.previous_percentage|default:"—" }}</td></tr>
+        <tr><th>Scholarship</th><td>{{ student.scholarship|default:"None" }}</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="sms-print-section">Attendance summary</h2>
+    <table class="table table-sm table-bordered">
+      <thead><tr><th>Subject</th><th>Present</th><th>Total</th><th>%</th></tr></thead>
+      <tbody>
+        {% for row in profile.subject_attendance %}
+          <tr><td>{{ row.code }} {{ row.name }}</td><td>{{ row.present }}</td><td>{{ row.total }}</td><td>{{ row.percentage }}%</td></tr>
+        {% empty %}
+          <tr><td colspan="4">No attendance recorded.</td></tr>
+        {% endfor %}
+        <tr>
+          <th>Overall</th>
+          <th>{{ profile.attendance_summary.present }}</th>
+          <th>{{ profile.attendance_summary.total }}</th>
+          <th>{{ profile.attendance_summary.percentage }}%</th>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 class="sms-print-section">Fee summary</h2>
+    <table class="table table-sm table-bordered">
+      <tbody>
+        <tr><th style="width:34%">Invoices</th><td>{{ profile.fee_summary.records }}</td></tr>
+        <tr><th>Billed</th><td>{{ profile.fee_summary.billed|money:CURRENCY_SYMBOL }}</td></tr>
+        <tr><th>Paid</th><td>{{ profile.fee_summary.paid|money:CURRENCY_SYMBOL }}</td></tr>
+        <tr><th>Pending</th><td>{{ profile.fee_summary.pending|money:CURRENCY_SYMBOL }}</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="sms-print-section">Examination summary</h2>
+    <table class="table table-sm table-bordered">
+      <thead><tr><th>Exam</th><th>Obtained</th><th>Total</th><th>%</th><th>Result</th></tr></thead>
+      <tbody>
+        {% for result in profile.results %}
+          <tr>
+            <td>{{ result.exam.name }}</td>
+            <td>{{ result.obtained_marks }}</td>
+            <td>{{ result.total_marks }}</td>
+            <td>{{ result.percentage }}%</td>
+            <td>{% if result.is_pass %}Pass{% else %}Fail{% endif %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5">No results published.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}

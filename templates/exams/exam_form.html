@@ -1,0 +1,64 @@
+{% extends "base_form.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:exam_list' %}"><i class="bi bi-arrow-left me-1"></i>Back</a>
+{% endblock %}
+
+{% block form_extra %}
+  {% if subject_choices %}
+    <hr class="my-4">
+    <h3 class="h6">Subjects in this exam</h3>
+    <p class="text-muted small">
+      Tick a subject and set its maximum marks, date, time and venue. On an edit, unticking a subject keeps the existing row.
+    </p>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle sms-table">
+        <thead><tr><th style="width:2.5rem"></th><th>Code</th><th>Subject</th><th>Semester</th>
+          <th style="width:7rem">Max marks</th><th style="width:9rem">Date</th><th style="width:7rem">Time</th><th>Venue</th></tr></thead>
+        <tbody>
+          {% for item in subject_choices %}
+            {% with code=item.code %}
+              <tr>
+                <td><input class="form-check-input" type="checkbox" name="subject_code" value="{{ code }}"
+                           id="sc_{{ code }}" {% for es in exam_subjects %}{% if es.subject.code == code %}checked{% endif %}{% endfor %}></td>
+                <td><label for="sc_{{ code }}" class="mb-0">{{ code }}</label></td>
+                <td>{{ item.name }}</td>
+                <td class="text-center">{{ item.semester.number }}</td>
+                <td>
+                  <input class="form-control form-control-sm" type="number" min="1" name="max_marks_{{ code }}"
+                         value="{% for es in exam_subjects %}{% if es.subject.code == code %}{{ es.max_marks }}{% endif %}{% endfor %}">
+                </td>
+                <td>
+                  <input class="form-control form-control-sm" type="date" name="exam_date_{{ code }}"
+                         value="{% for es in exam_subjects %}{% if es.subject.code == code %}{{ es.exam_date|date:'Y-m-d' }}{% endif %}{% endfor %}">
+                </td>
+                <td>
+                  <input class="form-control form-control-sm" type="time" name="exam_time_{{ code }}"
+                         value="{% for es in exam_subjects %}{% if es.subject.code == code %}{{ es.exam_time|time:'H:i' }}{% endif %}{% endfor %}">
+                </td>
+                <td>
+                  <input class="form-control form-control-sm" type="text" name="venue_{{ code }}"
+                         value="{% for es in exam_subjects %}{% if es.subject.code == code %}{{ es.venue }}{% endif %}{% endfor %}">
+                </td>
+              </tr>
+            {% endwith %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block form_below %}
+  <div class="card sms-card mt-3">
+    <div class="card-header bg-white"><h2 class="h6 mb-0">After saving</h2></div>
+    <div class="card-body small text-muted">
+      <ul class="mb-0">
+        <li>Add the subjects and maximum marks that belong to this exam.</li>
+        <li>Enter marks for each subject from the mark entry screen.</li>
+        <li>Recalculate results, then publish them when they are verified.</li>
+      </ul>
+    </div>
+  </div>
+{% endblock %}

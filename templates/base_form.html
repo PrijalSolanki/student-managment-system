@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block content %}
+  {% block form_before %}{% endblock %}
+  <div class="card sms-card">
+    <div class="card-header bg-white">
+      <h2 class="h6 mb-0">{{ form_title|default:card_title|default:page_title }}</h2>
+      {% if card_subtitle %}<p class="text-muted small mb-0 mt-1">{{ card_subtitle }}</p>{% endif %}
+    </div>
+    <div class="card-body">
+      {% if form %}
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          {% include "partials/_form_fields.html" %}
+          {% block form_extra %}{% endblock %}
+          <div class="d-flex gap-2 flex-wrap mt-3">
+            <button type="submit" class="btn btn-primary" {% block submit_disabled %}{% endblock %}>
+              <i class="bi bi-check2-circle me-1"></i>{{ submit_label|default:"Save changes" }}
+            </button>
+            <a class="btn btn-outline-secondary" href="{{ cancel_url|default:request.path }}">Cancel</a>
+            {% block form_actions_extra %}{% endblock %}
+          </div>
+        </form>
+      {% else %}
+        <p class="text-muted mb-0">This form is unavailable.</p>
+      {% endif %}
+    </div>
+  </div>
+  {% block form_below %}{% endblock %}
+{% endblock %}

@@ -1,0 +1,20 @@
+# Core framework and UI
+Django==5.0.9
+djangorestframework==3.15.2
+django-filter==24.3
+Pillow==10.4.0
+
+# Exports (CSV / XLSX / PDF)
+openpyxl==3.1.5
+reportlab==4.2.2
+
+# Utilities
+python-dateutil==2.9.0.post0
+
+# WSGI server for production (Linux/macOS)
+gunicorn==22.0.0
+
+# MySQL support. PyMySQL is pure Python and always installs; the project
+# registers it as the MySQLdb driver in config/__init__.py, so the compiled
+# mysqlclient package is optional. See requirements-mysql.txt.
+PyMySQL==1.1.1

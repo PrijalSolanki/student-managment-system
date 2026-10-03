@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block content %}
+  {% block list_summary %}{% endblock %}
+  {% block list_toolbar %}
+    <div class="sms-list-toolbar">
+      <div class="sms-export-buttons">
+        {% block export_buttons %}
+          <span class="sms-toolbar-label"><i class="bi bi-download me-1"></i>Export</span>
+          <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=csv %}"><i class="bi bi-filetype-csv"></i> CSV</a>
+          <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=xlsx %}"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+          <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=pdf %}"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+        {% endblock %}
+      </div>
+      {% block list_toolbar_extra %}{% endblock %}
+    </div>
+  {% endblock %}
+  <div class="card sms-card">
+    {% block table %}
+      {% include "partials/_table.html" %}
+    {% endblock %}
+  </div>
+  {% block list_footer %}
+    {% include "partials/_pagination.html" %}
+  {% endblock %}
+  {% block list_extra %}{% endblock %}
+{% endblock %}

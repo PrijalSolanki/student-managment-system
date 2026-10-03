@@ -1,0 +1,96 @@
+{% extends "base_list.html" %}
+{% load ui %}
+
+{% block list_summary %}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Total students</div><div class="sms-stat-value">{{ total_students }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Active</div><div class="sms-stat-value">{{ active_count }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">Inactive</div><div class="sms-stat-value">{{ inactive_count }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Graduated</div><div class="sms-stat-value">{{ graduated_count }}</div></div></div>
+  </div>
+
+  <div class="card sms-card mb-3">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h2 class="h6 mb-0"><i class="bi bi-funnel me-1"></i>Advanced search</h2>
+      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters"
+              aria-expanded="false" aria-controls="advancedFilters">Toggle</button>
+    </div>
+    <div class="collapse {% if quick_search or filter_form.is_bound %}show{% endif %}" id="advancedFilters">
+      <div class="card-body">
+        <form class="row g-2 align-items-end" method="get">
+          <div class="col-12 col-lg-4">
+            <label class="form-label small" for="advancedSearch">Keyword</label>
+            <input type="search" class="form-control" id="advancedSearch" name="q" value="{{ quick_search }}"
+                   placeholder="ID, name, email, phone, guardian">
+          </div>
+          <div class="col-6 col-lg-2">
+            <label class="form-label small" for="fDepartment">Department</label>
+            <select class="form-select" id="fDepartment" name="department">
+              <option value="">All</option>
+              {% for value, label in filter_form.fields.department.choices %}
+                <option value="{{ value }}" {% if filter_form.department.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-6 col-lg-2">
+            <label class="form-label small" for="fCourse">Course</label>
+            <select class="form-select" id="fCourse" name="course">
+              <option value="">All</option>
+              {% for value, label in filter_form.fields.course.choices %}
+                <option value="{{ value }}" {% if filter_form.course.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-6 col-lg-2">
+            <label class="form-label small" for="fSemester">Semester</label>
+            <select class="form-select" id="fSemester" name="semester">
+              <option value="">All</option>
+              {% for value, label in filter_form.fields.semester.choices %}
+                <option value="{{ value }}" {% if filter_form.semester.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-6 col-lg-2">
+            <label class="form-label small" for="fStatus">Status</label>
+            <select class="form-select" id="fStatus" name="status">
+              <option value="">All</option>
+              {% for value, label in filter_form.fields.status.choices %}
+                <option value="{{ value }}" {% if filter_form.status.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12 col-lg-2 d-flex gap-2">
+            <button class="btn btn-primary flex-fill" type="submit"><i class="bi bi-search me-1"></i>Apply</button>
+            <a class="btn btn-outline-secondary" href="{% url 'students:student_list' %}">Reset</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block list_toolbar_extra %}
+  <div class="d-flex flex-wrap gap-2 align-items-center">
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'students:student_stats' %}"><i class="bi bi-graph-up me-1"></i>Statistics</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'students:promotion_history' %}"><i class="bi bi-arrow-left-right me-1"></i>Promotions</a>
+    {% if table.bulk_action %}
+      <form method="post" action="{% url table.bulk_action %}" id="sms-bulk-form" class="d-flex flex-wrap gap-2 align-items-center">
+        {% csrf_token %}
+        <select class="form-select form-select-sm" name="bulk_action" style="max-width:190px">
+          <option value="">Bulk action…</option>
+          <option value="activate">Mark active</option>
+          <option value="deactivate">Mark inactive</option>
+          <option value="graduate">Mark graduated</option>
+          <option value="delete">Delete selected</option>
+        </select>
+        <button class="btn btn-sm btn-outline-primary" type="submit">Apply</button>
+      </form>
+    {% endif %}
+  </div>
+{% endblock %}
+
+{% block page_actions %}
+  {% if user.can('manage_students') %}
+    <a class="btn btn-sm btn-primary" href="{% url 'students:student_add' %}"><i class="bi bi-plus-lg me-1"></i>Add student</a>
+  {% endif %}
+{% endblock %}

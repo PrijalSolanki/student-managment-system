@@ -1,0 +1,11 @@
+# Optional native MySQL driver.
+#
+# The project already works with PyMySQL (see requirements.txt), which is
+# registered as the MySQLdb driver in config/__init__.py. Install this file
+# only if you prefer the compiled driver:
+#
+#     pip install -r requirements-mysql.txt
+#
+# On Windows this needs the MySQL C headers and a C compiler (Visual Studio
+# Build Tools); if the build fails, just skip it -- PyMySQL is enough.
+mysqlclient==2.2.4

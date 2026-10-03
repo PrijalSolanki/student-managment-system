@@ -1,0 +1,21 @@
+{% extends "base_list.html" %}
+{% load ui %}
+
+{% block list_summary %}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Student notices</div><div class="sms-stat-value">{{ total_notices }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Showing</div><div class="sms-stat-value">{{ result_count }}</div></div></div>
+  </div>
+  <div class="card sms-card mb-3 border-info-subtle">
+    <div class="card-body small text-muted">
+      <i class="bi bi-info-circle me-1"></i>
+      Notices sent here appear on the student's profile. Students do not log in, so use this page (or a
+      broadcast notification) for individual academic or disciplinary messages.
+    </div>
+  </div>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'notifications:notification_list' %}"><i class="bi bi-megaphone me-1"></i>Notifications</a>
+  <a class="btn btn-sm btn-primary" href="{% url 'notifications:student_announcement_add' %}"><i class="bi bi-plus-lg me-1"></i>Send notice</a>
+{% endblock %}

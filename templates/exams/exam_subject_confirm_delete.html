@@ -1,0 +1,9 @@
+{% extends "base_confirm_delete.html" %}
+{% load ui %}
+
+{% block heading %}Remove subject from exam{% endblock %}
+
+{% block confirm_text %}
+  Remove <strong>{{ object.subject.code }} — {{ object.subject.name }}</strong> from
+  <strong>{{ object.exam.code }}</strong>? {{ blocking_reason }}
+{% endblock %}

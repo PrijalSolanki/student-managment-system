@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  {% if user.can('manage_academics') %}
+    <a class="btn btn-sm btn-primary" href="{% url 'academics:semester_add' %}"><i class="bi bi-plus-lg me-1"></i>Add semester</a>
+  {% endif %}
+  <span class="btn btn-sm btn-outline-secondary disabled">
+    <i class="bi bi-info-circle me-1"></i>Semesters are referenced everywhere &mdash; deactivate by deleting only when unused
+  </span>
+{% endblock %}
+
+{% block content %}
+<div class="card sms-card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle sms-table mb-0">
+      <thead>
+        <tr>
+          <th style="width:4rem">#</th><th>Name</th><th>Subjects</th><th>Students</th>
+          <th>Current</th><th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for semester in semesters %}
+          <tr>
+            <td><span class="badge bg-primary">{{ semester.number }}</span></td>
+            <td>{{ semester.name }}</td>
+            <td class="text-center">{{ semester.subject_count }}</td>
+            <td class="text-center">{{ semester.student_count }}</td>
+            <td>
+              {% if semester.is_current %}<span class="badge bg-success">Current</span>
+              {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+            </td>
+            <td class="text-end sms-row-actions">
+              {% if user.can('manage_academics') %}
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'academics:semester_edit' semester.pk %}"><i class="bi bi-pencil"></i></a>
+                <form method="post" action="{% url 'academics:semester_delete' semester.pk %}" class="d-inline" data-confirm="Delete semester {{ semester.name }}?">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="sms-empty">No semesters configured yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

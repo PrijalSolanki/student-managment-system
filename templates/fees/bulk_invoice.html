@@ -1,0 +1,27 @@
+{% extends "base_form.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:fee_record_list' %}"><i class="bi bi-arrow-left me-1"></i>Invoices</a>
+{% endblock %}
+
+{% block submit_label %}Generate invoices{% endblock %}
+
+{% block form_before %}
+  <div class="card sms-card mb-3 border-info-subtle">
+    <div class="card-body small text-muted">
+      <i class="bi bi-info-circle me-1"></i>
+      Invoices are raised for every student matching the chosen scope. Duplicates (same student, fee type,
+      academic year and due date) are skipped automatically.
+    </div>
+  </div>
+{% endblock %}
+
+{% block form_below %}
+  {% if form.is_valid and preview_count %}
+    <div class="card sms-card mt-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Students in scope</h2></div>
+      <div class="card-body"><strong>{{ preview_count }}</strong> student(s) match the selected filters.</div>
+    </div>
+  {% endif %}
+{% endblock %}

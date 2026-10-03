@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'notifications:notification_detail' notification.pk %}"><i class="bi bi-arrow-left me-1"></i>Back to notice</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'notifications:notification_edit' notification.pk %}"><i class="bi bi-pencil me-1"></i>Edit</a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card sms-card">
+      <div class="card-header bg-white">
+        <h2 class="h6 mb-0">Audience preview</h2>
+      </div>
+      <div class="card-body text-center py-4">
+        <i class="bi bi-people display-4 d-block mb-2 text-muted"></i>
+        <div class="display-4">{{ students }}</div>
+        <p class="text-muted mb-0">active student profile{{ students|pluralize }} will receive this notice.</p>
+      </div>
+      <div class="card-footer bg-white">
+        <dl class="row mb-0">
+          <dt class="col-sm-4">Title</dt><dd class="col-sm-8">{{ notification.title }}</dd>
+          <dt class="col-sm-4">Audience</dt><dd class="col-sm-8">{{ notification.get_audience_display }}</dd>
+          <dt class="col-sm-4">Scope</dt><dd class="col-sm-8">{{ notification.scope_label }}</dd>
+          <dt class="col-sm-4">Priority</dt><dd class="col-sm-8">{{ notification.get_priority_display }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

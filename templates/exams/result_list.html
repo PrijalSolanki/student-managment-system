@@ -1,0 +1,16 @@
+{% extends "base_list.html" %}
+{% load ui %}
+
+{% block list_summary %}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Results</div><div class="sms-stat-value">{{ total_results }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Passed</div><div class="sms-stat-value">{{ passed_total }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-danger"><div class="sms-stat-label">Failed</div><div class="sms-stat-value">{{ failed_total }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Average</div><div class="sms-stat-value">{{ average_percentage }}%</div></div></div>
+  </div>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:grade_scale' %}"><i class="bi bi-award me-1"></i>Grading policy</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:exam_report' %}"><i class="bi bi-graph-up me-1"></i>Exam report</a>
+{% endblock %}

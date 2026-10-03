@@ -1,0 +1,56 @@
+{% extends "base_print.html" %}
+{% load ui %}
+
+{% block print_meta %}Receipt {{ payment.receipt_no }} &middot; printed {% now "d M Y, h:i A" %}{% endblock %}
+
+{% block content %}
+<div class="sms-print-grid">
+  <section>
+    <h2 class="sms-print-section">Received from</h2>
+    <table class="table table-sm table-bordered">
+      <tbody>
+        <tr><th style="width:34%">Student</th><td>{{ student.full_name }}</td></tr>
+        <tr><th>Student ID</th><td>{{ student.student_id }}</td></tr>
+        <tr><th>Course</th><td>{{ student.course.name }}</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 class="sms-print-section">Receipt details</h2>
+    <table class="table table-sm table-bordered">
+      <tbody>
+        <tr><th style="width:44%">Receipt number</th><td>{{ payment.receipt_no }}</td></tr>
+        <tr><th>Payment date</th><td>{{ payment.payment_date|date:"d M Y" }}</td></tr>
+        <tr><th>Method</th><td>{{ payment.get_method_display }}</td></tr>
+        <tr><th>Reference</th><td>{{ payment.reference_no|default:"—" }}</td></tr>
+        <tr><th>Collected by</th><td>{{ payment.received_by|default:"System" }}</td></tr>
+        <tr><th>Status</th><td>{% if payment.is_cancelled %}Cancelled{% else %}Active{% endif %}</td></tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<h2 class="sms-print-section">Amount received</h2>
+<table class="table table-sm table-bordered">
+  <tbody>
+    <tr>
+      <td>{{ payment.get_method_display }}{% if payment.reference_no %} &mdash; {{ payment.reference_no }}{% endif %}</td>
+      <td class="text-end"><strong>{{ payment.amount|money:CURRENCY_SYMBOL }}</strong></td>
+    </tr>
+    <tr>
+      <td>Applied to {{ payment.applied }}</td>
+      <td class="text-end">{{ payment.amount|money:CURRENCY_SYMBOL }}</td>
+    </tr>
+    <tr>
+      <td>Balance on {{ payment.applied }}</td>
+      <td class="text-end">
+        {% if payment.fee_record_id %}{{ payment.fee_record.remaining_amount|money:CURRENCY_SYMBOL }}{% else %}—{% endif %}
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+{% if payment.remarks %}<p class="small"><strong>Remarks:</strong> {{ payment.remarks }}</p>{% endif %}
+<p class="sms-print-meta mt-3">This is a computer generated receipt and does not require a signature.</p>
+{% endblock %}

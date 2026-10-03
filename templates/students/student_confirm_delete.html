@@ -1,0 +1,8 @@
+{% extends "base_confirm_delete.html" %}
+{% load ui %}
+
+{% block confirm_text %}
+  Delete <strong>{{ object }}</strong> ({{ object.student_id }})? Linked records will block the deletion:
+  {{ attendance_count }} attendance, {{ marks_count }} mark, {{ fee_count }} fee and {{ document_count }} document record(s).
+  Mark the student as inactive instead if the history must be retained.
+{% endblock %}

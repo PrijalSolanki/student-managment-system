@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block content %}
+<form method="get" class="sms-filter-bar">
+  <div class="sms-filter-search">
+    <label class="visually-hidden" for="q">Search</label>
+    <input class="form-control" type="search" id="q" name="q" value="{{ query }}"
+           placeholder="Search students, teachers, courses, departments, subjects&hellip;" autofocus>
+  </div>
+  <div class="sms-filter-actions">
+    <button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>Search</button>
+  </div>
+</form>
+
+{% if query %}
+  <p class="sms-filter-note">{{ total }} result{{ total|pluralize }} for &ldquo;{{ query }}&rdquo;.</p>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0"><i class="bi bi-people me-2"></i>Students</h2></div>
+      <div class="card-body p-0">
+        {% for student in results.students %}
+          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+             href="{% url 'students:student_detail' student.pk %}">
+            <span><strong>{{ student.student_id }}</strong> &middot; {{ student.full_name }}</span>
+            <small class="text-muted">{{ student.course.code|default:"—" }}</small>
+          </a>
+        {% empty %}
+          <div class="card-body text-muted small">No students matched.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card sms-card mb-3 h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0"><i class="bi bi-person-badge me-2"></i>Teachers</h2></div>
+      <div class="card-body p-0">
+        {% for teacher in results.teachers %}
+          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+             href="{% url 'teachers:teacher_detail' teacher.pk %}">
+            <span><strong>{{ teacher.employee_id }}</strong> &middot; {{ teacher.full_name }}</span>
+            <small class="text-muted">{{ teacher.department.name|default:"—" }}</small>
+          </a>
+        {% empty %}
+          <div class="card-body text-muted small">No teachers matched.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0"><i class="bi bi-mortarboard me-2"></i>Courses</h2></div>
+      <div class="card-body p-0">
+        {% for course in results.courses %}
+          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+             href="{% url 'academics:course_detail' course.pk %}">
+            <span>{{ course.code }} &middot; {{ course.name }}</span>
+            <small class="text-muted">{{ course.department.name }}</small>
+          </a>
+        {% empty %}
+          <div class="card-body text-muted small">No courses matched.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card sms-card mb-3 h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0"><i class="bi bi-journal-text me-2"></i>Subjects &amp; departments</h2></div>
+      <div class="card-body">
+        {% for subject in results.subjects %}
+          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+             href="{% url 'academics:subject_detail' subject.pk %}">
+            <span>{{ subject.code }} &middot; {{ subject.name }}</span>
+            <small class="text-muted">{{ subject.course.code }}</small>
+          </a>
+        {% empty %}
+          <div class="text-muted small mb-2">No subjects matched.</div>
+        {% endfor %}
+        {% for department in results.departments %}
+          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+             href="{% url 'academics:department_detail' department.pk %}">
+            <span><i class="bi bi-diagram-3 me-2"></i>{{ department.code }} &middot; {{ department.name }}</span>
+            <small class="text-muted">{{ department.student_count }} students</small>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

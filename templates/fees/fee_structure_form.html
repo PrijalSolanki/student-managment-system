@@ -1,0 +1,27 @@
+{% extends "base_form.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:fee_structure_list' %}"><i class="bi bi-arrow-left me-1"></i>Structures</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:bulk_invoice_generate' %}"><i class="bi bi-receipt me-1"></i>Generate invoices</a>
+{% endblock %}
+
+{% block form_below %}
+  <div class="card sms-card mt-3">
+    <div class="card-header bg-white"><h2 class="h6 mb-0">Preview</h2></div>
+    <div class="card-body">
+      {% if structure %}
+        <dl class="row mb-0">
+          <dt class="col-sm-3">Fee structure</dt><dd class="col-sm-9">{{ structure.fee_type.name }} &mdash; {{ structure.scope_label }}</dd>
+          <dt class="col-sm-3">Amount</dt><dd class="col-sm-9">{{ structure.amount|money:CURRENCY_SYMBOL }} ({{ structure.get_frequency_display }})</dd>
+          <dt class="col-sm-3">Students matched</dt><dd class="col-sm-9">{{ preview_count }}</dd>
+        </dl>
+        <p class="text-muted small mb-0 mt-2">
+          Existing invoices for the same fee type, academic year and due date are skipped, so running this twice is safe.
+        </p>
+      {% else %}
+        <p class="text-muted mb-0">No active fee structure exists yet. <a href="{% url 'fees:fee_structure_add' %}">Create one</a> first.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

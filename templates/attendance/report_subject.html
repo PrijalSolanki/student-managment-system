@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  {% if data %}
+    <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=csv %}"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+    <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=xlsx %}"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+    <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=pdf %}" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<form class="card sms-card mb-3" method="get">
+  <div class="card-body row g-2 align-items-end">
+    <div class="col-12 col-md-3">
+      <label class="form-label small" for="subjectFilter">Subject</label>
+      <select class="form-select" id="subjectFilter" name="subject">
+        <option value="">Select subject</option>
+        {% for item in subjects %}
+          <option value="{{ item.pk }}" {% if subject and subject.pk == item.pk %}selected{% endif %}>{{ item.code }} — {{ item.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="courseFilter">Course</label>
+      <select class="form-select" id="courseFilter" name="course">
+        <option value="">All courses</option>
+        {% for item in courses %}
+          <option value="{{ item.pk }}" {% if request.GET.course == item.pk|stringformat:'s' %}selected{% endif %}>{{ item.code }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="semesterFilter">Semester</label>
+      <select class="form-select" id="semesterFilter" name="semester">
+        <option value="">All semesters</option>
+        {% for item in semesters %}
+          <option value="{{ item.pk }}" {% if request.GET.semester == item.pk|stringformat:'s' %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="dateFrom">From</label>
+      <input type="date" class="form-control" id="dateFrom" name="date_from" value="{{ date_from|date:'Y-m-d' }}">
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small" for="dateTo">To</label>
+      <input type="date" class="form-control" id="dateTo" name="date_to" value="{{ date_to|date:'Y-m-d' }}">
+    </div>
+    <div class="col-12 col-md-1 d-flex">
+      <button class="btn btn-primary w-100" type="submit"><i class="bi bi-search"></i></button>
+    </div>
+  </div>
+</form>
+
+{% if data %}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Students marked</div><div class="sms-stat-value">{{ rows|length }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Present</div><div class="sms-stat-value">{{ data.totals.present }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-danger"><div class="sms-stat-label">Absent</div><div class="sms-stat-value">{{ data.totals.absent }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Attendance</div><div class="sms-stat-value">{{ data.totals.percentage }}%</div></div></div>
+  </div>
+
+  <div class="card sms-card">
+    <div class="card-header bg-white">
+      <h2 class="h6 mb-0">{{ subject.code }} — {{ subject.name }}</h2>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle sms-table mb-0">
+        <thead><tr><th>ID</th><th>Student</th><th class="text-center">Total</th><th class="text-center">Present</th><th class="text-center">Absent</th><th class="text-center">Leave</th><th style="width:12rem">Percentage</th></tr></thead>
+        <tbody>
+          {% for row in data.rows %}
+            <tr>
+              <td><a href="{% url 'students:student_detail' row.student_id %}">{{ row.student_code }}</a></td>
+              <td>{{ row.student_name }}</td>
+              <td class="text-center">{{ row.total }}</td>
+              <td class="text-center">{{ row.present }}</td>
+              <td class="text-center">{{ row.absent }}</td>
+              <td class="text-center">{{ row.leave }}</td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="progress flex-grow-1" role="progressbar" style="height:.5rem">
+                    <div class="progress-bar {% progress_class row.percentage %}" style="width:{% width_percent row.percentage %}%"></div>
+                  </div>
+                  <small class="text-muted">{{ row.percentage }}%</small>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7" class="sms-empty">No attendance recorded for this subject in the selected period.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% else %}
+  <div class="card sms-card">
+    <div class="card-body text-center text-muted py-5">
+      <i class="bi bi-journal-text display-5 d-block mb-2"></i>
+      Select a subject to generate the report.
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

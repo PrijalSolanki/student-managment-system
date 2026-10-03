@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=csv %}"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=xlsx %}"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring export=1 format=pdf %}" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+{% endblock %}
+
+{% block content %}
+<form class="card sms-card mb-3" method="get">
+  <div class="card-body row g-2 align-items-end">
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="reportMonth">Month</label>
+      <select class="form-select" id="reportMonth" name="month">
+        {% for value, label in months %}
+          <option value="{{ value }}" {% if value == month %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small" for="reportYear">Year</label>
+      <select class="form-select" id="reportYear" name="year">
+        {% for item in years %}
+          <option value="{{ item }}" {% if item == year %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-md-3 d-flex gap-2">
+      <button class="btn btn-primary flex-fill" type="submit"><i class="bi bi-search me-1"></i>Show</button>
+      <a class="btn btn-outline-secondary" href="{% url 'attendance:report_monthly' %}">Reset</a>
+    </div>
+  </div>
+</form>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Records</div><div class="sms-stat-value">{{ data.totals.total }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Present</div><div class="sms-stat-value">{{ data.totals.present }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-danger"><div class="sms-stat-label">Absent</div><div class="sms-stat-value">{{ data.totals.absent }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">On leave</div><div class="sms-stat-value">{{ data.totals.leave }}</div></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-xl-7">
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Day wise summary</h2></div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle sms-table mb-0">
+          <thead>
+            <tr><th>Date</th><th class="text-center">Total</th><th class="text-center">Present</th>
+              <th class="text-center">Absent</th><th class="text-center">Leave</th><th class="text-end">%</th></tr>
+          </thead>
+          <tbody>
+            {% for row in data.days %}
+              <tr>
+                <td class="text-nowrap">{{ row.date|date:"d M Y" }}</td>
+                <td class="text-center">{{ row.total }}</td>
+                <td class="text-center">{{ row.present }}</td>
+                <td class="text-center">{{ row.absent }}</td>
+                <td class="text-center">{{ row.leave }}</td>
+                <td class="text-end"><span class="badge bg-{{ row.percentage|status_class }}">{{ row.percentage }}%</span></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" class="sms-empty">No attendance records for this month.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-5">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Subject wise summary</h2></div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle sms-table mb-0">
+          <thead><tr><th>Code</th><th>Subject</th><th class="text-center">Present</th><th class="text-end">%</th></tr></thead>
+          <tbody>
+            {% for row in data.subjects %}
+              <tr>
+                <td>{{ row.subject_code }}</td>
+                <td>{{ row.subject }}</td>
+                <td class="text-center">{{ row.present }}/{{ row.total }}</td>
+                <td class="text-end"><span class="badge bg-{{ row.percentage|status_class }}">{{ row.percentage }}%</span></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="sms-empty">No subject data.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Daily presence chart</h2></div>
+      <div class="card-body">
+        <div style="height:260px"><canvas id="monthlyChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    var rows = [
+      {% for row in data.days %}{day: "{{ row.date|date:'Y-m-d' }}", present: {{ row.present }}, absent: {{ row.absent }}}{% if not forloop.last %},{% endif %}{% endfor %}
+    ];
+    if (!rows.length || typeof Chart === "undefined") { return; }
+    var labels = rows.map(function (row) { return row.day; });
+    smsChart("monthlyChart", {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [
+          { label: "Present", data: rows.map(function (r) { return r.present; }), backgroundColor: "#198754" },
+          { label: "Absent", data: rows.map(function (r) { return r.absent; }), backgroundColor: "#dc3545" }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { position: "bottom" } }
+      }
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'reports:report_index' %}"><i class="bi bi-arrow-left me-1"></i>Reports</a>
+  <button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.print()"><i class="bi bi-printer me-1"></i>Print</button>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Students</div><div class="sms-stat-value">{{ data.enrollment.total }}</div><small class="text-muted">{{ data.enrollment.active }} active</small></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Attendance</div><div class="sms-stat-value">{{ data.attendance.percentage|pct }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">Pass rate</div><div class="sms-stat-value">{{ data.performance.pass_percentage|pct }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Fees collected</div><div class="sms-stat-value">{{ data.fees.collection_percentage|pct }}</div><small class="text-muted">{{ data.fees.collected|money:CURRENCY_SYMBOL }}</small></div></div>
+</div>
+
+<div class="card sms-card mb-3">
+  <div class="card-header bg-white">
+    <h2 class="h6 mb-0">Enrollment by department</h2>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle sms-table mb-0">
+      <thead><tr><th>Department</th><th class="text-center">Students</th><th class="text-center">Active</th><th class="text-end">Share</th></tr></thead>
+      <tbody>
+        {% for row in departments %}
+          <tr>
+            <td>{{ row.name }}</td>
+            <td class="text-center">{{ row.total }}</td>
+            <td class="text-center">{{ row.active }}</td>
+            <td class="text-end">{% width_percent row.total data.enrollment.total as share %}{{ share }}%</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="sms-empty">No department has enrolled students.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if is_paginated %}
+    <div class="card-footer bg-white">{% include "partials/_pagination.html" %}</div>
+  {% endif %}
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-6">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Attendance summary</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-7">Total records</dt><dd class="col-sm-5 text-end">{{ data.attendance.total }}</dd>
+          <dt class="col-sm-7">Present</dt><dd class="col-sm-5 text-end">{{ data.attendance.present }}</dd>
+          <dt class="col-sm-7">Absent</dt><dd class="col-sm-5 text-end">{{ data.attendance.absent }}</dd>
+          <dt class="col-sm-7">Leave</dt><dd class="col-sm-5 text-end">{{ data.attendance.leave }}</dd>
+          <dt class="col-sm-7">Attendance rate</dt><dd class="col-sm-5 text-end">{{ data.attendance.percentage|pct }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Examination summary</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-7">Results recorded</dt><dd class="col-sm-5 text-end">{{ data.performance.total }}</dd>
+          <dt class="col-sm-7">Passed</dt><dd class="col-sm-5 text-end">{{ data.performance.passed }}</dd>
+          <dt class="col-sm-7">Failed</dt><dd class="col-sm-5 text-end">{{ data.performance.failed }}</dd>
+          <dt class="col-sm-7">Pass rate</dt><dd class="col-sm-5 text-end">{{ data.performance.pass_percentage|pct }}</dd>
+          <dt class="col-sm-7">Average score</dt><dd class="col-sm-5 text-end">{{ data.performance.average_percentage|pct }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-6">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Fee position</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-7">Total billed</dt><dd class="col-sm-5 text-end">{{ data.fees.billed|money:CURRENCY_SYMBOL }}</dd>
+          <dt class="col-sm-7">Collected</dt><dd class="col-sm-5 text-end">{{ data.fees.collected|money:CURRENCY_SYMBOL }}</dd>
+          <dt class="col-sm-7">Outstanding</dt><dd class="col-sm-5 text-end">{{ data.fees.pending|money:CURRENCY_SYMBOL }}</dd>
+          <dt class="col-sm-7">Overdue</dt><dd class="col-sm-5 text-end">{{ data.fees.overdue_amount|money:CURRENCY_SYMBOL }}</dd>
+          <dt class="col-sm-7">Cancelled invoices</dt><dd class="col-sm-5 text-end">{{ data.fees.cancelled_records }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Faculty &amp; academics</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-7">Teachers (active)</dt><dd class="col-sm-5 text-end">{{ data.teachers.active }}</dd>
+          <dt class="col-sm-7">Subject assignments</dt><dd class="col-sm-5 text-end">{{ data.academics.assignments }}</dd>
+          <dt class="col-sm-7">Courses</dt><dd class="col-sm-5 text-end">{{ data.academics.courses }}</dd>
+          <dt class="col-sm-7">Subjects</dt><dd class="col-sm-5 text-end">{{ data.academics.subjects }}</dd>
+          <dt class="col-sm-7">Batches</dt><dd class="col-sm-5 text-end">{{ data.academics.batches }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card sms-card">
+  <div class="card-header bg-white"><h2 class="h6 mb-0">Admission trend</h2></div>
+  <div class="card-body"><div style="height:240px"><canvas id="overviewTrend"></canvas></div></div>
+  <div class="card-footer bg-white small text-muted">
+    Generated on {{ data.generated_at|date:"d M Y, H:i" }}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    var labels = [{% for label in data.admissions.labels %}"{{ label }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+    if (!labels.length || typeof Chart === "undefined") { return; }
+    smsChart("overviewTrend", {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [{ label: "Admissions", data: [{% for value in data.admissions.values %}{{ value }}{% if not forloop.last %}, {% endif %}{% endfor %}], backgroundColor: "#1f3c88" }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+    });
+  })();
+</script>
+{% endblock %}

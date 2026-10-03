@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:payment_list' %}"><i class="bi bi-cash-coin me-1"></i>Payments</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:student_ledger' student.pk %}"><i class="bi bi-journal-text me-1"></i>Ledger</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-4">
+    <div class="sms-stat tone-warning">
+      <div class="sms-stat-label">Total outstanding</div>
+      <div class="sms-stat-value">{{ total_due|money:CURRENCY_SYMBOL }}</div>
+      <small class="text-muted">{{ pending|length }} open invoice(s)</small>
+    </div>
+  </div>
+</div>
+
+<form method="post" class="card sms-card">
+  {% csrf_token %}
+  <div class="card-header bg-white"><h2 class="h6 mb-0">Collect payment from {{ student.full_name }}</h2></div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label" for="amount">Amount</label>
+        <input class="form-control" type="number" step="0.01" min="0.01" name="amount" id="amount" required
+               placeholder="e.g. 5000.00">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="payment_date">Payment date</label>
+        <input class="form-control" type="date" name="payment_date" id="payment_date"
+               value="{% now 'Y-m-d' %}" max="{% now 'Y-m-d' %}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="method">Method</label>
+        <select class="form-select" name="method" id="method">
+          {% for value, label in methods %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="reference_no">Reference number</label>
+        <input class="form-control" type="text" name="reference_no" id="reference_no" placeholder="Transaction / cheque number">
+      </div>
+      <div class="col-12">
+        <label class="form-label" for="fee_record">Apply to invoice</label>
+        <select class="form-select" name="fee_record" id="fee_record">
+          <option value="">Allocate automatically (oldest invoice first)</option>
+          {% for record in pending %}
+            <option value="{{ record.pk }}" {% if query_param request 'invoice' == record.pk|stringformat:'s' %}selected{% endif %}>
+              {{ record.invoice_no }} &mdash; {{ record.fee_type.name }} &mdash; {{ record.remaining_amount|money:CURRENCY_SYMBOL }} due {{ record.due_date|date:"d M Y" }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12">
+        <input type="hidden" name="allocation" value="oldest">
+        <label class="form-label" for="remarks">Remarks</label>
+        <input class="form-control" type="text" name="remarks" id="remarks" placeholder="Optional note">
+      </div>
+    </div>
+  </div>
+  <div class="card-footer bg-white d-flex gap-2">
+    <button class="btn btn-primary" type="submit"><i class="bi bi-check2-circle me-1"></i>Collect payment</button>
+    <a class="btn btn-outline-secondary" href="{% url 'fees:student_ledger' student.pk %}">Cancel</a>
+  </div>
+</form>
+
+<div class="card sms-card mt-3">
+  <div class="card-header bg-white"><h2 class="h6 mb-0">Open invoices</h2></div>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle sms-table mb-0">
+      <thead><tr><th>Invoice</th><th>Fee type</th><th>Due date</th><th class="text-end">Balance</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for record in pending %}
+          <tr>
+            <td><a href="{% url 'fees:fee_record_detail' record.pk %}">{{ record.invoice_no }}</a></td>
+            <td>{{ record.fee_type.name }}</td>
+            <td>{{ record.due_date|date:"d M Y" }}{% if record.is_overdue %} <span class="badge bg-danger">{{ record.days_overdue }}d late</span>{% endif %}</td>
+            <td class="text-end">{{ record.remaining_amount|money:CURRENCY_SYMBOL }}</td>
+            <td><span class="badge bg-{{ record.status_badge }}">{{ record.get_status_display }}</span></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="sms-empty">This student has no outstanding invoices.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

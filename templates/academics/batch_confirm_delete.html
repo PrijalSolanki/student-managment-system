@@ -1,0 +1,6 @@
+{% extends "base_confirm_delete.html" %}
+{% load ui %}
+
+{% block confirm_text %}
+  Delete the batch <strong>{{ object }}</strong>? Students enrolled in this batch will block the deletion.
+{% endblock %}

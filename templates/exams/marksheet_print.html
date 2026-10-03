@@ -1,0 +1,75 @@
+{% extends "base_print.html" %}
+{% load ui %}
+
+{% block print_meta %}Generated on {% now "d M Y, h:i A" %}{% endblock %}
+
+{% block content %}
+<div class="sms-print-grid">
+  <section>
+    <h2 class="sms-print-section">Marksheet</h2>
+    <table class="table table-sm table-bordered">
+      <tbody>
+        <tr><th style="width:34%">Institute</th><td>{{ SITE_SETTINGS.institute_name|default:INSTITUTE_NAME }}</td></tr>
+        <tr><th>Student</th><td>{{ result.student.full_name }}</td></tr>
+        <tr><th>Student ID</th><td>{{ result.student.student_id }}</td></tr>
+        <tr><th>Course</th><td>{{ result.exam.course.name }}</td></tr>
+        <tr><th>Semester</th><td>{{ result.exam.semester }}</td></tr>
+        <tr><th>Academic year</th><td>{{ result.exam.academic_year }}</td></tr>
+        <tr><th>Examination</th><td>{{ result.exam.name }} ({{ result.exam.code }})</td></tr>
+        <tr><th>Exam dates</th><td>{{ result.exam.start_date|date:"d M Y" }} to {{ result.exam.end_date|date:"d M Y" }}</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 class="sms-print-section">Result summary</h2>
+    <table class="table table-sm table-bordered">
+      <tbody>
+        <tr><th style="width:50%">Total marks</th><td>{{ result.total_marks }} / {{ result.max_marks }}</td></tr>
+        <tr><th>Percentage</th><td>{{ result.percentage }}%</td></tr>
+        <tr><th>Grade</th><td>{{ result.grade }} ({{ result.grade_point }})</td></tr>
+        <tr><th>Result</th><td>{% if result.is_pass %}PASS{% else %}FAIL{% endif %}</td></tr>
+        <tr><th>Rank</th><td>{{ rank|default:"—" }}</td></tr>
+        <tr><th>Published</th><td>{% if result.published %}Yes{% else %}No{% endif %}</td></tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<h2 class="sms-print-section">Subject wise marks</h2>
+<table class="table table-sm table-bordered">
+  <thead>
+    <tr><th>Code</th><th>Subject</th><th>Credits</th><th class="text-center">Max</th><th class="text-center">Pass</th>
+      <th class="text-center">Obtained</th><th class="text-center">%</th><th class="text-center">Grade</th><th class="text-center">Result</th></tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+      <tr>
+        <td>{{ row.subject.code }}</td>
+        <td>{{ row.subject.name }}</td>
+        <td class="text-center">{{ row.credits }}</td>
+        <td class="text-center">{{ row.max_marks }}</td>
+        <td class="text-center">{{ row.pass_marks }}</td>
+        <td class="text-center">{% if row.is_absent %}Absent{% elif row.obtained != None %}{{ row.obtained }}{% else %}—{% endif %}</td>
+        <td class="text-center">{{ row.percentage }}%</td>
+        <td class="text-center">{{ row.grade }}</td>
+        <td class="text-center">{% if row.is_pass %}P{% else %}F{% endif %}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="9">No marks recorded.</td></tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <th colspan="4">TOTAL</th>
+      <th class="text-center">—</th>
+      <th class="text-center">{{ result.total_marks }}</th>
+      <th class="text-center">{{ result.percentage }}%</th>
+      <th class="text-center">{{ result.grade }}</th>
+      <th class="text-center">{% if result.is_pass %}PASS{% else %}FAIL{% endif %}</th>
+    </tr>
+  </tfoot>
+</table>
+
+<p class="sms-print-meta mt-3">This is a computer generated marksheet and does not require a signature.</p>
+{% endblock %}

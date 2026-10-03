@@ -1,0 +1,7 @@
+{% extends "base_list.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:exam_list' %}"><i class="bi bi-file-earmark-text me-1"></i>Exams</a>
+  <a class="btn btn-sm btn-primary" href="{% url 'exams:mark_entry_list' %}"><i class="bi bi-pencil-square me-1"></i>Refresh</a>
+{% endblock %}

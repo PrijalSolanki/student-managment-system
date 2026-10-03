@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:exam_list' %}"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:mark_entry' exam.pk %}"><i class="bi bi-pencil-square me-1"></i>Mark entry</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:result_list' %}?exam={{ exam.pk }}"><i class="bi bi-award me-1"></i>Results</a>
+  {% if user.can('manage_exams') %}
+    <a class="btn btn-sm btn-outline-primary" href="{% url 'exams:exam_edit' exam.pk %}"><i class="bi bi-pencil me-1"></i>Edit</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Subjects</div><div class="sms-stat-value">{{ progress.subjects }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Students</div><div class="sms-stat-value">{{ progress.students }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Marks entered</div><div class="sms-stat-value">{{ progress.entered }}</div><small class="text-muted">of {{ progress.expected }}</small></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">Passed</div><div class="sms-stat-value">{{ pass_total }}</div><small class="text-muted">{{ fail_total }} failed</small></div></div>
+</div>
+
+<div class="card sms-card mb-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between mb-1">
+      <strong>Marks entry progress</strong><span>{{ progress.percentage }}%</span>
+    </div>
+    <div class="progress" role="progressbar" style="height:.6rem">
+      <div class="progress-bar {% progress_class progress.percentage %}" style="width:{% width_percent progress.percentage %}%"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card sms-card mb-3">
+  <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <h2 class="h6 mb-0">Publish</h2>
+    <div class="d-flex gap-2">
+      <form method="post" action="{% url 'exams:exam_publish_toggle' exam.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-sm btn-outline-primary" type="submit">
+          <i class="bi bi-eye me-1"></i>{% if exam.is_published %}Unpublish exam{% else %}Publish exam{% endif %}
+        </button>
+      </form>
+      <form method="post" action="{% url 'exams:exam_recalculate' exam.pk %}"
+            data-confirm="Recalculate every result for this exam?">
+        {% csrf_token %}
+        <button class="btn btn-sm btn-outline-secondary" type="submit" {% if exam.results_published %}disabled{% endif %}>
+          <i class="bi bi-arrow-repeat me-1"></i>Recalculate results
+        </button>
+      </form>
+      <form method="post" action="{% url 'exams:exam_results_publish' exam.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="{% if exam.results_published %}unpublish{% else %}publish{% endif %}">
+        <button class="btn btn-sm {% if exam.results_published %}btn-outline-danger{% else %}btn-outline-success{% endif %}" type="submit">
+          <i class="bi bi-award me-1"></i>{% if exam.results_published %}Hide results{% else %}Publish results{% endif %}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-xl-7">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Overview</h2></div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4">Code</dt><dd class="col-sm-8">{{ exam.code }}</dd>
+          <dt class="col-sm-4">Type</dt><dd class="col-sm-8">{{ exam.get_exam_type_display }}</dd>
+          <dt class="col-sm-4">Course</dt>
+          <dd class="col-sm-8"><a href="{% url 'academics:course_detail' exam.course.pk %}">{{ exam.course.name }}</a></dd>
+          <dt class="col-sm-4">Semester</dt><dd class="col-sm-8">{{ exam.semester }}</dd>
+          <dt class="col-sm-4">Academic year</dt><dd class="col-sm-8">{{ exam.academic_year }}</dd>
+          <dt class="col-sm-4">Schedule</dt><dd class="col-sm-8">{{ exam.start_date|date:"d M Y" }} &rarr; {{ exam.end_date|date:"d M Y" }}</dd>
+          <dt class="col-sm-4">Published</dt><dd class="col-sm-8">{% if exam.is_published %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</dd>
+          <dt class="col-sm-4">Results published</dt><dd class="col-sm-8">{% if exam.results_published %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</dd>
+          <dt class="col-sm-4">Created by</dt><dd class="col-sm-8">{{ exam.created_by|default:"—" }}</dd>
+        </dl>
+        {% if exam.instructions %}<hr><p class="small mb-0">{{ exam.instructions|linebreaksbr }}</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Subjects &amp; marks</h2></div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle sms-table mb-0">
+          <thead><tr><th>Code</th><th>Subject</th><th class="text-center">Max</th><th class="text-center">Pass</th><th>Date</th><th>Time</th><th>Venue</th><th class="text-end"></th></tr></thead>
+          <tbody>
+            {% for es in exam_subjects %}
+              <tr>
+                <td>{{ es.subject.code }}</td>
+                <td><a href="{% url 'academics:subject_detail' es.subject.pk %}">{{ es.subject.name }}</a></td>
+                <td class="text-center">{{ es.max_marks }}</td>
+                <td class="text-center">{{ es.pass_marks }}</td>
+                <td>{{ es.exam_date|date:"d M Y"|default:"—" }}</td>
+                <td>{{ es.exam_time|default:"—" }}</td>
+                <td>{{ es.venue|default:"—" }}</td>
+                <td class="text-end sms-row-actions">
+                  <a class="btn btn-sm btn-outline-secondary" href="{% url 'exams:mark_entry' exam.pk %}?exam_subject={{ es.pk }}" title="Enter marks"><i class="bi bi-pencil-square"></i></a>
+                  {% if user.can('manage_exams') %}
+                    <form method="post" action="{% url 'exams:exam_subject_delete' es.pk %}" class="d-inline"
+                          data-confirm="Remove {{ es.subject.code }} from this exam?">
+                      {% csrf_token %}
+                      <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="8" class="sms-empty">No subjects mapped to this exam yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-5">
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Top results</h2></div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle sms-table mb-0">
+          <thead><tr><th>#</th><th>Student</th><th class="text-end">%</th><th class="text-center">Grade</th><th></th></tr></thead>
+          <tbody>
+            {% for result in top_results %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td><a href="{% url 'students:student_detail' result.student.pk %}">{{ result.student.student_id }}</a></td>
+                <td class="text-end">{{ result.percentage }}%</td>
+                <td class="text-center">{{ result.grade }}</td>
+                <td class="text-end"><span class="badge bg-{% if result.is_pass %}success{% else %}danger{% endif %}">{% if result.is_pass %}P{% else %}F{% endif %}</span></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="sms-empty">Results have not been generated.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card sms-card mb-3">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Grade distribution</h2></div>
+      <div class="card-body">
+        <div style="height:220px"><canvas id="gradeChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card sms-card">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Recently updated marks</h2></div>
+      <div class="list-group list-group-flush">
+        {% for entry in recent_marks %}
+          <div class="list-group-item d-flex justify-content-between">
+            <span>{{ entry.student.full_name }} <small class="text-muted">{{ entry.exam_subject.subject.code }}</small></span>
+            <strong>{{ entry.display_marks }}/{{ entry.exam_subject.max_marks }}</strong>
+          </div>
+        {% empty %}
+          <div class="card-body text-muted small">No marks entered yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    var labels = [
+      {% for row in grade_distribution %}"{{ row.grade }}"{% if not forloop.last %}, {% endif %}{% endfor %}
+    ];
+    var values = [
+      {% for row in grade_distribution %}{{ row.count }}{% if not forloop.last %}, {% endif %}{% endfor %}
+    ];
+    if (!labels.length || typeof Chart === "undefined") { return; }
+    smsChart("gradeChart", {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [{ label: "Students", data: values, backgroundColor: "#1f3c88" }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { display: false } }
+      }
+    });
+  })();
+</script>
+{% endblock %}

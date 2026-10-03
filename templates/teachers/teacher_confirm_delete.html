@@ -1,0 +1,6 @@
+{% extends "base_confirm_delete.html" %}
+{% load ui %}
+
+{% block confirm_text %}
+  Delete the profile of <strong>{{ object }}</strong>? {{ assignment_count }} subject assignment(s) are linked to this teacher. Consider marking the teacher as {{ object.get_status_display|lower }} instead.
+{% endblock %}

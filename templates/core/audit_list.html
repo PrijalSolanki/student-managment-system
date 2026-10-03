@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load ui humanize %}
+
+{% block page_actions %}
+  <span class="btn btn-sm btn-outline-secondary disabled">
+    <i class="bi bi-calendar-day me-1"></i>{{ today_count }} today
+  </span>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="sms-filter-bar" data-filter-form>
+  <div class="sms-filter-search">
+    <label class="visually-hidden" for="q">Search</label>
+    <input class="form-control form-control-sm" type="search" id="q" name="q" value="{{ filters.q|default:'' }}"
+           placeholder="Search record, description, user&hellip;">
+  </div>
+  <div class="sms-filter-item">
+    <label class="form-label mb-1" for="action">Action</label>
+    <select class="form-select form-select-sm" id="action" name="action">
+      <option value="">All</option>
+      {% for value, label in action_choices %}
+        <option value="{{ value }}" {% if filters.action == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="sms-filter-item">
+    <label class="form-label mb-1" for="module">Module</label>
+    <select class="form-select form-select-sm" id="module" name="module">
+      <option value="">All</option>
+      {% for name in modules %}
+        <option value="{{ name }}" {% if filters.module == name %}selected{% endif %}>{{ name|title }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="sms-filter-item">
+    <label class="form-label mb-1" for="date_from">From</label>
+    <input class="form-control form-control-sm" type="date" id="date_from" name="date_from" value="{{ filters.date_from|default:'' }}">
+  </div>
+  <div class="sms-filter-item">
+    <label class="form-label mb-1" for="date_to">To</label>
+    <input class="form-control form-control-sm" type="date" id="date_to" name="date_to" value="{{ filters.date_to|default:'' }}">
+  </div>
+  <div class="sms-filter-actions">
+    <button class="btn btn-sm btn-primary" type="submit"><i class="bi bi-funnel me-1"></i>Apply</button>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'core:audit_list' %}">Reset</a>
+  </div>
+</form>
+
+<div class="row g-3 mb-3">
+  <div class="col-4">
+    <div class="sms-stat"><div class="sms-stat-label">Entries today</div><div class="sms-stat-value">{{ today_count }}</div></div>
+  </div>
+  <div class="col-4">
+    <div class="sms-stat tone-info"><div class="sms-stat-label">Sign-ins today</div><div class="sms-stat-value">{{ logins_today }}</div></div>
+  </div>
+  <div class="col-4">
+    <div class="sms-stat tone-success"><div class="sms-stat-label">Active users</div><div class="sms-stat-value">{{ users_active }}</div></div>
+  </div>
+</div>
+
+<div class="card sms-card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle sms-table mb-0">
+      <thead>
+        <tr>
+          <th>When</th><th>User</th><th>Action</th><th>Module</th><th>Description</th>
+          <th>IP</th><th class="text-end">Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+          <tr>
+            <td class="text-nowrap">{{ log.created_at|date:"d M Y H:i" }}</td>
+            <td>{{ log.username_snapshot|default:"anonymous" }}</td>
+            <td><span class="badge bg-{{ log.action|status_class }}">{{ log.get_action_display }}</span></td>
+            <td>{{ log.module|default:"—"|title }}</td>
+            <td class="sms-text-truncate">{{ log.description|default:log.record_repr|truncatechars:60 }}</td>
+            <td class="text-muted">{{ log.ip_address|default:"—" }}</td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-primary" href="{% url 'core:audit_detail' log.pk %}"><i class="bi bi-eye"></i></a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="sms-empty">No audit entries match the current filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "partials/_pagination.html" %}
+{% endblock %}

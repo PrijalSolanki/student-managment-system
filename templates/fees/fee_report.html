@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block page_actions %}
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=csv %}"><i class="bi bi-filetype-csv me-1"></i>CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=xlsx %}"><i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="?{% querystring format=pdf %}" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:overdue_report' %}"><i class="bi bi-exclamation-circle me-1"></i>Overdue report</a>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="card sms-card mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-6 col-lg-3">
+        <label class="form-label small" for="date_from">From</label>
+        <input class="form-control" type="date" name="date_from" id="date_from" value="{{ period_start|date:'Y-m-d' }}">
+      </div>
+      <div class="col-6 col-lg-3">
+        <label class="form-label small" for="date_to">To</label>
+        <input class="form-control" type="date" name="date_to" id="date_to" value="{{ period_end|date:'Y-m-d' }}">
+      </div>
+      <div class="col-12 col-lg-4 d-flex gap-2">
+        <button class="btn btn-primary" type="submit"><i class="bi bi-funnel me-1"></i>Apply</button>
+        <a class="btn btn-outline-secondary" href="{% url 'fees:fee_report' %}">Reset</a>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="sms-stat"><div class="sms-stat-label">Total billed</div><div class="sms-stat-value">{{ summary.billed|money:CURRENCY_SYMBOL }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-success"><div class="sms-stat-label">Collected (all time)</div><div class="sms-stat-value">{{ summary.collected|money:CURRENCY_SYMBOL }}</div><small class="text-muted">{{ summary.collection_percentage|pct }} of billed</small></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-info"><div class="sms-stat-label">Collected this month</div><div class="sms-stat-value">{{ summary.month_collected|money:CURRENCY_SYMBOL }}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="sms-stat tone-warning"><div class="sms-stat-label">Outstanding</div><div class="sms-stat-value">{{ summary.pending|money:CURRENCY_SYMBOL }}</div><small class="text-muted">{{ summary.cancelled_records }} cancelled</small></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-5">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Collection by method ({{ period_start|date:"d M Y" }} &ndash; {{ period_end|date:"d M Y" }})</h2></div>
+      <div class="table-responsive">
+        <table class="table align-middle sms-table mb-0">
+          <thead><tr><th>Method</th><th class="text-center">Count</th><th class="text-end">Amount</th><th class="text-end">Share</th></tr></thead>
+          <tbody>
+            {% for row in methods %}
+              <tr>
+                <td>{{ row.method_display }}</td>
+                <td class="text-center">{{ row.count }}</td>
+                <td class="text-end">{{ row.total|money:CURRENCY_SYMBOL }}</td>
+                <td class="text-end">
+                  {% width_percent row.total summary.month_collected as method_pct %}{{ method_pct }}%
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="sms-empty">No payments recorded in this period.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card sms-card h-100">
+      <div class="card-header bg-white"><h2 class="h6 mb-0">Method distribution</h2></div>
+      <div class="card-body"><div style="height:260px"><canvas id="methodChart"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="card sms-card">
+  <div class="card-header bg-white"><h2 class="h6 mb-0">Top defaulters</h2></div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle sms-table mb-0">
+      <thead><tr><th>Student ID</th><th>Name</th><th class="text-center">Invoices</th><th class="text-end">Outstanding</th><th></th></tr></thead>
+      <tbody>
+        {% for row in top_rows %}
+          <tr>
+            <td>{{ row.student_id }}</td>
+            <td><a href="{% url 'students:student_detail' row.pk %}">{{ row.name }}</a></td>
+            <td class="text-center">{{ row.invoices }}</td>
+            <td class="text-end">{{ row.outstanding|money:CURRENCY_SYMBOL }}</td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:collect_payment' row.pk %}" title="Collect payment"><i class="bi bi-cash-coin"></i></a>
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'fees:student_ledger' row.pk %}" title="Open ledger"><i class="bi bi-journal-text"></i></a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="sms-empty">No student has an outstanding balance.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    var labels = [{% for label in chart_labels %}"{{ label }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+    var values = [{% for value in chart_values %}{{ value }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    if (!labels.length || typeof Chart === "undefined") { return; }
+    smsChart("methodChart", {
+      type: "doughnut",
+      data: {
+        labels: labels,
+        datasets: [{ data: values, backgroundColor: ["#1f3c88", "#198754", "#ffc107", "#dc3545", "#0dcaf0", "#6f42c1"] }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: "right" } }
+      }
+    });
+  })();
+</script>
+{% endblock %}

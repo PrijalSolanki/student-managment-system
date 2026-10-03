@@ -1,0 +1,30 @@
+{% load ui %}
+{% if is_paginated %}
+<nav aria-label="Pagination" class="sms-pagination">
+  <p class="sms-pagination-info">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages|default:1 }}
+    &middot; {{ page_obj.paginator.count|default:0 }} record{{ page_obj.paginator.count|pluralize }}
+  </p>
+  <ul class="pagination pagination-sm mb-0">
+    <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+      <a class="page-link" href="?{% querystring page=1 %}">First</a>
+    </li>
+    <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+      <a class="page-link" href="?{% querystring page=page_obj.previous_page_number %}">Previous</a>
+    </li>
+    {% for number in page_obj.paginator.page_range %}
+      {% if number == page_obj.number %}
+        <li class="page-item active"><span class="page-link">{{ number }}</span></li>
+      {% elif number > page_obj.number|add:"-3" and number < page_obj.number|add:"3" %}
+        <li class="page-item"><a class="page-link" href="?{% querystring page=number %}">{{ number }}</a></li>
+      {% endif %}
+    {% endfor %}
+    <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+      <a class="page-link" href="?{% querystring page=page_obj.next_page_number %}">Next</a>
+    </li>
+    <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+      <a class="page-link" href="?{% querystring page=page_obj.paginator.num_pages %}">Last</a>
+    </li>
+  </ul>
+</nav>
+{% endif %}
